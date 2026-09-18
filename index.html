@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sprachenschule Global � Learn German, Spanish, French, Swahili & English</title>
-<meta name="description" content="Language school in Nairobi offering German A1-B2, Spanish, French, Swahili & English. Self-study materials, Ausbildung guidance, visa & AuPair consultation.">
+<title>Sprachenschule Global — Learn German, Spanish, French, Swahili & English</title>
+<meta name="description" content="Language school in Nairobi offering German A1–B2, Spanish, French, Swahili & English. Self-study materials, Ausbildung guidance, visa & AuPair consultation, and scholarships for ECDE and Nursing students.">
 
 <!-- Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -213,17 +213,35 @@ section{padding:90px 0}
 .course-card .duration{
   font-size:0.88rem;color:var(--gray);font-weight:500;
 }
-.course-card ul{
-  list-style:none;margin-top:18px;
-  display:flex;flex-direction:column;gap:8px;
+.course-card .exam-body{
+  margin-top:20px;padding-top:18px;border-top:1px solid var(--line);
+  font-size:0.85rem;color:var(--gray);
 }
-.course-card ul li{
-  font-size:0.88rem;color:var(--gray);
-  padding-left:22px;position:relative;
+.course-card .exam-body strong{
+  display:block;color:var(--navy);font-size:0.78rem;
+  text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;
 }
-.course-card ul li::before{
-  content:"?";position:absolute;left:0;color:var(--gold);font-weight:700;
+
+/* Examining bodies */
+.exam-bodies{background:var(--cream)}
+.exam-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:22px;
 }
+.exam-card{
+  background:var(--white);border:1px solid var(--line);
+  border-radius:18px;padding:28px 24px;
+  transition:transform .25s, box-shadow .25s;
+}
+.exam-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(11,31,58,0.08)}
+.exam-card h3{font-size:1.1rem;margin-bottom:8px}
+.exam-card .lang-tag{
+  display:inline-block;font-size:0.72rem;font-weight:700;
+  color:var(--gold);background:rgba(224,168,46,0.14);
+  padding:4px 10px;border-radius:999px;margin-bottom:14px;
+  text-transform:uppercase;letter-spacing:0.08em;
+}
+.exam-card p{font-size:0.9rem}
+.exam-card p strong{color:var(--navy);font-weight:600}
 
 /* Why us */
 .why{background:var(--cream)}
@@ -295,8 +313,40 @@ section{padding:90px 0}
   padding-left:24px;position:relative;
 }
 .service-card ul li::before{
-  content:"?";position:absolute;left:0;color:var(--gold);font-weight:700;
+  content:"→";position:absolute;left:0;color:var(--gold);font-weight:700;
 }
+
+/* Scholarships */
+.scholarships{
+  background:linear-gradient(135deg,#FFF9EC 0%, #FDF2D8 100%);
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+}
+.scholarship-banner{
+  background:var(--navy);color:var(--white);
+  border-radius:24px;padding:48px 40px;
+  display:grid;grid-template-columns:1fr 1fr;gap:40px;
+  align-items:center;
+  box-shadow:0 24px 60px rgba(11,31,58,0.18);
+}
+.scholarship-banner .label{color:var(--gold-soft)}
+.scholarship-banner h2{color:var(--white);margin-bottom:16px;font-size:clamp(1.6rem,3vw,2.2rem)}
+.scholarship-banner p{color:rgba(255,255,255,0.78);font-size:1rem;margin-bottom:24px}
+.scholarship-info{
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:18px;padding:28px 26px;
+}
+.scholarship-info h3{color:var(--white);margin-bottom:16px;font-size:1.05rem}
+.scholarship-info ul{list-style:none;display:flex;flex-direction:column;gap:12px}
+.scholarship-info li{
+  font-size:0.92rem;color:rgba(255,255,255,0.85);
+  padding-left:26px;position:relative;
+}
+.scholarship-info li::before{
+  content:"✓";position:absolute;left:0;color:var(--gold);font-weight:700;
+}
+.scholarship-info li strong{color:var(--white);font-weight:600}
 
 /* CTA */
 .cta{
@@ -380,6 +430,7 @@ footer a:hover{color:var(--gold)}
   .hero{padding:70px 0 60px}
   .contact-grid{grid-template-columns:1fr}
   .footer-grid{grid-template-columns:1fr 1fr}
+  .scholarship-banner{grid-template-columns:1fr;padding:36px 28px}
   .nav-links{display:none}
   .menu-btn{display:block}
   .nav-links.open{
@@ -409,11 +460,12 @@ footer a:hover{color:var(--gold)}
     <nav class="nav-links" id="navLinks">
       <a href="#courses">Courses</a>
       <a href="#self-study">Self-Study</a>
-      <a href="#services">Ausbildung & Visa</a>
+      <a href="#scholarships">Scholarships</a>
+      <a href="#services">Ausbildung &amp; Visa</a>
       <a href="#contact">Contact</a>
       <a href="https://wa.me/254118515919?text=Hello%20Sprachenschule%2C%20I%27d%20like%20to%20know%20more%20about%20your%20courses." target="_blank" rel="noopener" class="nav-cta">Chat on WhatsApp</a>
     </nav>
-    <button class="menu-btn" id="menuBtn" aria-label="Menu">?</button>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu">☰</button>
   </div>
 </header>
 
@@ -421,10 +473,10 @@ footer a:hover{color:var(--gold)}
 <section class="hero" id="home">
   <div class="container hero-grid">
     <div>
-      <span class="eyebrow"><span>?</span> Murera, Nairobi � Off Thika Super Highway, Exit 13</span>
+      <span class="eyebrow"><span>●</span> Murera, Nairobi · Off Thika Super Highway, Exit 13</span>
       <h1>Learn a language.<br><em>Unlock a future.</em></h1>
       <p class="lead">
-        German, Spanish, French, Swahili &amp; English � taught by expert instructors in Nairobi, or studied at your own pace with our self-study materials. We also guide you through Ausbildung applications, visa processes, and AuPair arrangements.
+        German, Spanish, French, Swahili &amp; English — taught by expert instructors in Nairobi, or studied at your own pace with our self-study materials. We also guide you through Ausbildung applications, visa processes, and AuPair arrangements.
       </p>
       <div class="btn-row">
         <a href="https://wa.me/254118515919?text=Hello%20Sprachenschule%2C%20I%27d%20like%20to%20enroll%20in%20a%20language%20course." target="_blank" rel="noopener" class="btn btn-wa">
@@ -438,7 +490,7 @@ footer a:hover{color:var(--gold)}
     <div class="hero-card">
       <h3>Languages We Teach</h3>
       <ul class="lang-list">
-        <li>German <span>A1 � B2</span></li>
+        <li>German <span>A1 – B2</span></li>
         <li>Spanish <span>All levels</span></li>
         <li>French <span>All levels</span></li>
         <li>Swahili <span>All levels</span></li>
@@ -451,8 +503,8 @@ footer a:hover{color:var(--gold)}
 <!-- ============ QUOTE ============ -->
 <div class="quote-section">
   <div class="container">
-    <blockquote>�Man is multiplied by the number of languages he possesses and speaks.�</blockquote>
-    <cite>� Jos� Rizal</cite>
+    <blockquote>“Man is multiplied by the number of languages he possesses and speaks.”</blockquote>
+    <cite>— José Rizal</cite>
   </div>
 </div>
 
@@ -462,7 +514,7 @@ footer a:hover{color:var(--gold)}
     <div class="section-head">
       <span class="label">Our Courses</span>
       <h2>German Language Track</h2>
-      <p>Structured, level-based courses designed to take you from complete beginner to confident speaker � with the option to learn with an instructor or study independently.</p>
+      <p>Structured, level-based courses designed to take you from complete beginner to confident speaker — with the option to learn with an instructor or study independently.</p>
     </div>
 
     <div class="course-grid">
@@ -471,12 +523,11 @@ footer a:hover{color:var(--gold)}
         <h3>German A1</h3>
         <span class="level-tag">Beginner</span>
         <div class="price">KES 10,000 <small>/ course</small></div>
-        <div class="duration">? 8 weeks</div>
-        <ul>
-          <li>Alphabet, greetings &amp; introductions</li>
-          <li>Everyday vocabulary &amp; basic grammar</li>
-          <li>Simple conversations &amp; listening</li>
-        </ul>
+        <div class="duration">⏱ 8 weeks</div>
+        <div class="exam-body">
+          <strong>Examining Body</strong>
+          Goethe-Institut · telc · ÖSD
+        </div>
       </div>
 
       <div class="course-card">
@@ -484,12 +535,11 @@ footer a:hover{color:var(--gold)}
         <h3>German A2</h3>
         <span class="level-tag">Elementary</span>
         <div class="price">KES 15,000 <small>/ course</small></div>
-        <div class="duration">? 8 weeks</div>
-        <ul>
-          <li>Past tenses &amp; expanded grammar</li>
-          <li>Daily situations &amp; travel</li>
-          <li>Reading &amp; writing practice</li>
-        </ul>
+        <div class="duration">⏱ 8 weeks</div>
+        <div class="exam-body">
+          <strong>Examining Body</strong>
+          Goethe-Institut · telc · ÖSD
+        </div>
       </div>
 
       <div class="course-card">
@@ -497,12 +547,11 @@ footer a:hover{color:var(--gold)}
         <h3>German B1</h3>
         <span class="level-tag">Intermediate</span>
         <div class="price">KES 25,000 <small>/ course</small></div>
-        <div class="duration">? 12 weeks</div>
-        <ul>
-          <li>Fluent everyday communication</li>
-          <li>Complex texts &amp; opinions</li>
-          <li>Exam-style preparation</li>
-        </ul>
+        <div class="duration">⏱ 12 weeks</div>
+        <div class="exam-body">
+          <strong>Examining Body</strong>
+          Goethe-Institut · telc · ÖSD · TestDaF (prep)
+        </div>
       </div>
 
       <div class="course-card">
@@ -510,18 +559,71 @@ footer a:hover{color:var(--gold)}
         <h3>German B2</h3>
         <span class="level-tag">Upper Intermediate</span>
         <div class="price">KES 30,000 <small>/ course</small></div>
-        <div class="duration">? 12 weeks</div>
-        <ul>
-          <li>Advanced grammar &amp; fluency</li>
-          <li>Professional &amp; academic German</li>
-          <li>Ausbildung / work readiness</li>
-        </ul>
+        <div class="duration">⏱ 12 weeks</div>
+        <div class="exam-body">
+          <strong>Examining Body</strong>
+          Goethe-Institut · telc · TestDaF · DSH
+        </div>
       </div>
     </div>
 
     <p style="text-align:center;margin-top:40px;font-size:0.95rem">
       We also offer <strong>Spanish, French, Swahili &amp; English</strong>. Contact us for rates and schedules.
     </p>
+  </div>
+</section>
+
+<!-- ============ EXAMINING BODIES ============ -->
+<section class="exam-bodies" id="examining-bodies">
+  <div class="container">
+    <div class="section-head">
+      <span class="label">Certification</span>
+      <h2>Examining Bodies We Prepare You For</h2>
+      <p>Our courses align with internationally recognised examination bodies, so your certificate is valid wherever your journey takes you.</p>
+    </div>
+
+    <div class="exam-grid">
+      <div class="exam-card">
+        <span class="lang-tag">German</span>
+        <h3>Goethe-Institut</h3>
+        <p>The most widely recognised German language certification worldwide, offering exams from <strong>A1 to C2</strong>. Accepted by employers, universities, and embassies globally.</p>
+      </div>
+      <div class="exam-card">
+        <span class="lang-tag">German</span>
+        <h3>telc</h3>
+        <p>Europe's leading provider of language certificates, with exams aligned to the <strong>CEFR framework</strong>. Recognised for work, study, and immigration purposes in Germany.</p>
+      </div>
+      <div class="exam-card">
+        <span class="lang-tag">German</span>
+        <h3>ÖSD</h3>
+        <p>The Austrian German Language Diploma, offering <strong>internationally recognised exams</strong> from A1 to C2. Accepted by universities and employers in Austria, Germany, and Switzerland.</p>
+      </div>
+      <div class="exam-card">
+        <span class="lang-tag">German</span>
+        <h3>TestDaF &amp; DSH</h3>
+        <p>University-level German exams required for <strong>admission to German universities</strong>. We offer preparation support for both at B2 level and above.</p>
+      </div>
+      <div class="exam-card">
+        <span class="lang-tag">Spanish</span>
+        <h3>DELE &amp; SIELE</h3>
+        <p>Official Spanish proficiency exams issued by the <strong>Instituto Cervantes</strong>. Recognised internationally for study, work, and migration.</p>
+      </div>
+      <div class="exam-card">
+        <span class="lang-tag">French</span>
+        <h3>DELF &amp; DALF</h3>
+        <p>Official French diplomas issued by <strong>France Éducation International</strong>. DELF covers A1–B2, while DALF covers C1–C2.</p>
+      </div>
+      <div class="exam-card">
+        <span class="lang-tag">English</span>
+        <h3>IELTS, TOEFL &amp; Cambridge</h3>
+        <p>Globally recognised English proficiency exams for <strong>university admission, migration, and professional registration</strong>.</p>
+      </div>
+      <div class="exam-card">
+        <span class="lang-tag">Swahili</span>
+        <h3>KNEC &amp; CBET</h3>
+        <p>Swahili proficiency assessed through <strong>Kenyan national examination frameworks</strong> and competency-based education and training.</p>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -535,24 +637,24 @@ footer a:hover{color:var(--gold)}
 
     <div class="why-grid">
       <div class="why-item">
-        <div class="icon">??</div>
+        <div class="icon">🎓</div>
         <h3>Expert Instructors</h3>
         <p>Fluent, experienced teachers who understand both the language and the culture behind it.</p>
       </div>
       <div class="why-item">
-        <div class="icon">??</div>
+        <div class="icon">📚</div>
         <h3>Self-Study Option</h3>
         <p>Prefer learning on your own? Access PDFs, videos, and audios for every course level.</p>
       </div>
       <div class="why-item">
-        <div class="icon">??</div>
+        <div class="icon">✈️</div>
         <h3>Beyond the Classroom</h3>
-        <p>Ausbildung guidance, visa consultation, and AuPair support � we walk with you to Germany.</p>
+        <p>Ausbildung guidance, visa consultation, and AuPair support — we walk with you to Germany.</p>
       </div>
       <div class="why-item">
-        <div class="icon">???</div>
+        <div class="icon">🗓️</div>
         <h3>Flexible Learning</h3>
-        <p>Instructor-led classes or independent study � choose the path that fits your life.</p>
+        <p>Instructor-led classes or independent study — choose the path that fits your life.</p>
       </div>
     </div>
   </div>
@@ -564,27 +666,27 @@ footer a:hover{color:var(--gold)}
     <div class="section-head">
       <span class="label">Self-Study Materials</span>
       <h2>Learn at your own pace</h2>
-      <p>Complete learning material for every course � downloadable PDFs, video lessons, and audio files for pronunciation and listening practice.</p>
+      <p>Complete learning material for every course — downloadable PDFs, video lessons, and audio files for pronunciation and listening practice.</p>
     </div>
 
     <div class="material-grid">
       <div class="material-card">
-        <div class="m-icon">??</div>
+        <div class="m-icon">📄</div>
         <h3>PDFs</h3>
         <p>Grammar guides, vocabulary lists &amp; exercises</p>
       </div>
       <div class="material-card">
-        <div class="m-icon">??</div>
+        <div class="m-icon">🎬</div>
         <h3>Videos</h3>
         <p>Recorded lessons &amp; pronunciation practice</p>
       </div>
       <div class="material-card">
-        <div class="m-icon">??</div>
+        <div class="m-icon">🎧</div>
         <h3>Audios</h3>
         <p>Listening exercises &amp; native-speaker dialogues</p>
       </div>
       <div class="material-card">
-        <div class="m-icon">??</div>
+        <div class="m-icon">📝</div>
         <h3>Exercises</h3>
         <p>Self-check worksheets for every level</p>
       </div>
@@ -598,13 +700,50 @@ footer a:hover{color:var(--gold)}
   </div>
 </section>
 
+<!-- ============ SCHOLARSHIPS ============ -->
+<section class="scholarships" id="scholarships">
+  <div class="container">
+    <div class="section-head">
+      <span class="label">Scholarships &amp; Sponsorship</span>
+      <h2>Support for high-performing students</h2>
+      <p>We believe financial circumstances should never stand in the way of a bright, determined learner. That's why we offer scholarships and sponsorship opportunities for outstanding students.</p>
+    </div>
+
+    <div class="scholarship-banner">
+      <div>
+        <span class="label">Special Focus</span>
+        <h2>ECDE &amp; Nursing Students Learning German</h2>
+        <p>Students with a background in Early Childhood Development Education (ECDE) or Nursing are in high demand in Germany. We offer dedicated scholarship and sponsorship support to help you reach your goals.</p>
+        <a href="https://wa.me/254118515919?text=Hello%20Sprachenschule%2C%20I%27m%20interested%20in%20the%20scholarship%20for%20ECDE%2FNursing%20students%20learning%20German." target="_blank" rel="noopener" class="btn btn-wa">
+          Apply via WhatsApp
+        </a>
+      </div>
+
+      <div class="scholarship-info">
+        <h3>What the Scholarship Covers</h3>
+        <ul>
+          <li><strong>Partial or full fee waiver</strong> on German courses (A1–B2)</li>
+          <li><strong>Free learning materials</strong> — PDFs, videos, and audios</li>
+          <li><strong>Priority mentorship</strong> from our senior instructors</li>
+          <li><strong>Ausbildung placement guidance</strong> in ECDE and Nursing fields</li>
+          <li><strong>Visa &amp; documentation support</strong> at subsidised rates</li>
+          <li><strong>Sponsorship linkage</strong> with partner organisations in Germany</li>
+        </ul>
+        <p style="margin-top:20px;font-size:0.85rem;color:rgba(255,255,255,0.65)">
+          Eligibility is based on academic performance, financial need, and a short interview. Contact us for details.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ============ SERVICES ============ -->
 <section class="services" id="services">
   <div class="container">
     <div class="section-head">
       <span class="label">Beyond the Classroom</span>
       <h2>Your journey to Germany starts here</h2>
-      <p>We don't just teach the language � we help you build the life that comes after it.</p>
+      <p>We don't just teach the language — we help you build the life that comes after it.</p>
     </div>
 
     <div class="service-grid">
@@ -625,7 +764,7 @@ footer a:hover{color:var(--gold)}
       <div class="service-card">
         <span class="badge">Paid Consultation</span>
         <h3>Visa &amp; AuPair Support</h3>
-        <p>Personal, step-by-step guidance for your move to Germany � whether you're studying, working, or becoming an AuPair.</p>
+        <p>Personal, step-by-step guidance for your move to Germany — whether you're studying, working, or becoming an AuPair.</p>
         <ul>
           <li>Germany visa process guidance</li>
           <li>Student, language &amp; work visas</li>
@@ -646,10 +785,10 @@ footer a:hover{color:var(--gold)}
     <p>Message us on WhatsApp and we'll help you choose the right course for your goals.</p>
     <div class="btn-row" style="justify-content:center">
       <a href="https://wa.me/254118515919?text=Hello%20Sprachenschule%2C%20I%27d%20like%20to%20get%20started." target="_blank" rel="noopener" class="btn btn-primary">
-        ?? Chat on WhatsApp
+        💬 Chat on WhatsApp
       </a>
       <a href="mailto:sprachenschuleglobal@gmail.com" class="btn btn-outline">
-        ?? Email Us
+        ✉️ Email Us
       </a>
     </div>
   </div>
@@ -667,7 +806,7 @@ footer a:hover{color:var(--gold)}
     <div class="contact-grid">
       <div class="contact-info">
         <div class="contact-item">
-          <div class="c-icon">??</div>
+          <div class="c-icon">📧</div>
           <div>
             <h4>Email</h4>
             <a href="mailto:sprachenschuleglobal@gmail.com">sprachenschuleglobal@gmail.com</a>
@@ -675,7 +814,7 @@ footer a:hover{color:var(--gold)}
         </div>
 
         <div class="contact-item">
-          <div class="c-icon">??</div>
+          <div class="c-icon">📞</div>
           <div>
             <h4>Call Us</h4>
             <a href="tel:+254719535117">+254 719 535 117</a><br>
@@ -684,7 +823,7 @@ footer a:hover{color:var(--gold)}
         </div>
 
         <div class="contact-item">
-          <div class="c-icon">??</div>
+          <div class="c-icon">💬</div>
           <div>
             <h4>WhatsApp</h4>
             <a href="https://wa.me/254118515919" target="_blank" rel="noopener">+254 118 515 919</a>
@@ -692,7 +831,7 @@ footer a:hover{color:var(--gold)}
         </div>
 
         <div class="contact-item">
-          <div class="c-icon">??</div>
+          <div class="c-icon">📍</div>
           <div>
             <h4>Location</h4>
             <p>Murera, Mukuyu Road<br>Off Thika Super Highway, Exit 13</p>
@@ -700,7 +839,7 @@ footer a:hover{color:var(--gold)}
         </div>
 
         <div class="contact-item">
-          <div class="c-icon">??</div>
+          <div class="c-icon">🔗</div>
           <div>
             <h4>Facebook</h4>
             <a href="https://www.facebook.com/Sprachenschule/" target="_blank" rel="noopener">facebook.com/Sprachenschule</a>
@@ -727,14 +866,16 @@ footer a:hover{color:var(--gold)}
           <span class="logo-mark">S</span>
           Sprachenschule Global
         </div>
-        <p>A Nairobi-based language school opening doors through language � from the classroom to Germany and beyond.</p>
+        <p>A Nairobi-based language school opening doors through language — from the classroom to Germany and beyond.</p>
       </div>
 
       <div>
         <h4>Quick Links</h4>
         <div class="footer-links">
           <a href="#courses">Courses</a>
+          <a href="#examining-bodies">Examining Bodies</a>
           <a href="#self-study">Self-Study Materials</a>
+          <a href="#scholarships">Scholarships</a>
           <a href="#services">Ausbildung &amp; Visa</a>
           <a href="#contact">Contact</a>
         </div>
@@ -752,7 +893,7 @@ footer a:hover{color:var(--gold)}
     </div>
 
     <div class="footer-bottom">
-      � <span id="year"></span> Sprachenschule Global. All rights reserved. � German � Spanish � French � Swahili � English
+      © <span id="year"></span> Sprachenschule Global. All rights reserved. · German • Spanish • French • Swahili • English
     </div>
   </div>
 </footer>
