@@ -54,12 +54,15 @@ header{
 .logo{
   font-family:'Playfair Display',serif;
   font-weight:700;font-size:1.35rem;color:var(--navy);
-  display:flex;align-items:center;gap:10px;
+  display:flex;align-items:center;gap:12px;
 }
-.logo-mark{
-  width:36px;height:36px;border-radius:10px;
-  background:var(--navy);color:var(--gold);
-  display:grid;place-items:center;font-size:1rem;font-weight:700;
+.logo img{
+  width:54px;height:54px;object-fit:contain;display:block;
+}
+.logo-mark{display:none}
+@media(max-width:600px){
+  .logo{font-size:1.05rem;gap:8px}
+  .logo img{width:44px;height:44px}
 }
 .back-link{
   font-size:0.9rem;font-weight:500;color:var(--navy);
@@ -381,9 +384,9 @@ footer a:hover{color:var(--gold-soft)}
 <!-- Header -->
 <header>
   <div class="nav">
-    <a href="index.html" class="logo">
-      <span class="logo-mark">S</span>
-      Sprachenschule
+    <a href="index.html" class="logo" aria-label="Sprachenschule Global home">
+      <img src="logo.png" alt="Sprachenschule Global logo">
+      <span>Sprachenschule</span>
     </a>
     <a href="index.html" class="back-link">← Back to Home</a>
   </div>
