@@ -70,8 +70,3 @@ header:not(.site-header){position:sticky;top:0;z-index:20;background:rgba(247,24
 }
 
 
-/* Header brand tagline: restored beneath the school name. */
-.brand { display: inline-flex; align-items: center; }
-.brand .brand-tagline { display: block; font-size: .62rem; line-height: 1.2; letter-spacing: .075em; text-transform: uppercase; opacity: .78; margin-top: .15rem; }
-.brand .brand-name { display: block; }
-@media (max-width: 600px) { .brand .brand-tagline { font-size: .52rem; letter-spacing: .045em; } }
