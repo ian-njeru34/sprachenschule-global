@@ -1,0 +1,16 @@
+COURSE CARD BACKGROUNDS
+
+Updated file: courses.html
+Updated stylesheet: styles.css
+
+The French, English, Spanish and Swahili cards now use full-card scenic backgrounds with a slow Ken Burns-style movement, dark overlays for readable text, and responsive layouts. The scene images are loaded from Unsplash URLs in the CSS custom property on each card, so you do not need to upload media files.
+
+Important: these are animated photographic backgrounds, not actual MP4 video footage. They create a subtle video-like motion effect without requiring you to host video files. If you later want real footage, replace each card's --course-scene image URL and add a <video autoplay muted loop playsinline> element with a hosted MP4 source.
+
+Scene choices:
+- French: intended as vineyard / French countryside atmosphere
+- English: London, United Kingdom
+- Spanish: Madrid / Spain city atmosphere
+- Swahili: East African coastal atmosphere; use a verified Lamu Old Town image if this image does not show Lamu accurately
+
+No video files are required. Backgrounds need an internet connection to load.
