@@ -125,12 +125,12 @@ body.school-page main>section{background:transparent;}
 @media(max-width:900px){.blog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.blog-featured{grid-column:span 2}.blog-section-head{align-items:flex-start;flex-direction:column}}
 @media(max-width:600px){.blog-grid{grid-template-columns:1fr}.blog-featured{grid-column:auto;display:flex;flex-direction:column}.blog-featured .blog-image{min-height:230px}.blog-search{align-items:stretch}.blog-search .btn{padding-inline:15px}.blog-filters{gap:6px}.blog-filter{padding:8px 11px}}
 
-/* Desktop-only request: reduce the entire header search control to 40% of its previous dimensions. */
+/* Desktop header search: balanced with the navigation, logo and Enquire action. */
 @media (min-width:1051px){
-  .site-search{width:clamp(76px,9.6vw,128px);height:16px;flex-basis:clamp(76px,9.6vw,128px)}
-  .site-search input{padding-left:7.2px;font-size:6.4px}
-  .site-search button{width:24.8px;min-width:24.8px;height:16px}
-  .site-search button svg{width:8.8px;height:8.8px}
+  .site-search{width:clamp(180px,18vw,240px);height:34px;flex-basis:clamp(180px,18vw,240px)}
+  .site-search input{padding-left:13px;font-size:13px}
+  .site-search button{width:42px;min-width:42px;height:34px}
+  .site-search button svg{width:18px;height:18px}
 }
 
 /* Public website search results */
