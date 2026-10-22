@@ -110,9 +110,9 @@ body.school-page main>section{background:transparent;}
 .header-search input::placeholder{color:#7b8780}
 .header-search button{align-self:stretch;display:flex;align-items:center;justify-content:center;gap:5px;border:0;background:var(--forest,#173d35);color:#fff;padding:0 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 .header-search button:hover{background:var(--forest-2,#214f44)}
-.header-search button span[aria-hidden="true"]{font-size:20px;line-height:1}
+.header-search button svg{display:block;width:19px;height:19px;flex:none}
 @media(max-width:1050px){.header-search{order:3;flex:1 1 100%;margin:10px 0 0;max-width:none}.nav-wrap{flex-wrap:wrap}}
-@media(max-width:600px){.header-search{min-width:100%;margin-top:12px}.header-search input{padding:11px 13px!important}.header-search .search-button-text{display:inline}}
+@media(max-width:600px){.header-search{min-width:100%;margin-top:12px}.header-search input{padding:11px 13px!important}.header-search button{width:44px;min-width:44px;padding:0}}
 /* Search results page */
 .search-page{padding:clamp(28px,5vw,64px) 0 80px;min-height:55vh}
 .search-intro{max-width:760px;margin-bottom:26px}
