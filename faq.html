@@ -10,7 +10,11 @@
 <div class="nav-group"><button type="button">Student area</button><div class="dropdown"><a href="school.html">Register or sign in</a><a href="e-learning.html">Online learning</a><a href="shop.html">Learning materials shop</a></div></div>
 <a href="admissions.html">Admissions</a>
 <a href="contact.html">Contact</a>
-</nav><div class="nav-actions"><a class="btn btn-primary" href="admissions.html">Enquire about a course ↗</a></div>
+</nav><div class="nav-actions"><a class="btn btn-primary" href="admissions.html">Enquire about a course ↗</a></div><form class="header-search" role="search" action="search.html" method="get" aria-label="Search the website">
+  <label class="sr-only" for="siteSearchInput">Search all pages</label>
+  <input id="siteSearchInput" type="search" name="q" placeholder="Search the website…" autocomplete="off" aria-label="Search all webpages">
+  <button type="submit" aria-label="Submit search"><span aria-hidden="true">⌕</span><span class="search-button-text">Search</span></button>
+</form>
 </div></div></header>
 
 </header>
@@ -38,4 +42,4 @@
 <div class="container footer-bottom"><span>© <span id="year"></span> Sprachenschule · Nairobi, Kenya</span><span>Learning with respect, access and opportunity for all.</span></div></footer>
 <a class="whatsapp-float" href="https://wa.me/254118515919" aria-label="Contact Sprachenschule on WhatsApp" title="WhatsApp us">◔</a>
 <script>function toggleMenu(){const n=document.getElementById('primaryNav');const b=document.querySelector('.menu-toggle');const open=n.classList.toggle('open');b.setAttribute('aria-expanded',String(open));b.textContent=open?'×':'☰'}document.addEventListener('click',e=>{if(e.target.matches('.nav-group>button')){const menu=e.target.nextElementSibling;const visible=getComputedStyle(menu).display!=='none';if(window.innerWidth<=820){document.querySelectorAll('.dropdown').forEach(d=>d.style.display='none');menu.style.display=visible?'none':'grid'}}});document.getElementById('year')&&(document.getElementById('year').textContent=new Date().getFullYear());</script>
-<script src="search.js" defer></script></body></html>
+</body></html>
