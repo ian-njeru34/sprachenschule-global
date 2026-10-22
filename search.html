@@ -1,91 +1,13 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Search the website | Sprachenschule</title>
-<meta name="description" content="Search courses, fees, admissions, learning resources and other information across the Sprachenschule website.">
-<meta name="theme-color" content="#173d35">
-<link rel="icon" type="image/png" href="logo.png"><link rel="apple-touch-icon" href="logo.png">
-<link rel="stylesheet" href="styles.css">
-</head>
-<body>
-<header class="site-header"><div class="container"><div class="nav-wrap">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Search | Sprachenschule</title><meta name="description" content="Search publicly available pages and articles on the Sprachenschule website."><link rel="icon" type="image/png" href="logo.png"><link rel="stylesheet" href="styles.css"></head><body><header class="site-header"><div class="container"><div class="nav-wrap">
 <a class="brand" href="index.html"><img src="logo.png" alt="Sprachenschule logo"><span class="brand-name">Sprachenschule<small>Language · Culture · Opportunity</small></span></a>
 <button class="menu-toggle" aria-label="Open navigation" aria-expanded="false" onclick="toggleMenu()">☰</button>
 <nav class="primary-nav" id="primaryNav" aria-label="Main navigation">
 <a href="index.html">Home</a>
+<a href="blog.html">Blog</a>
 <div class="nav-group"><button type="button">Learn</button><div class="dropdown"><a href="courses.html">All courses</a><a href="courses.html#german">German A1–B2</a><a href="courses.html#other-languages">Other languages</a><a href="learning-method.html">How learning works</a></div></div>
 <div class="nav-group"><button type="button">Explore</button><div class="dropdown"><a href="about.html">About the school</a><a href="germany-pathways.html">Germany pathways</a><a href="faq.html">Frequently asked questions</a></div></div>
 <div class="nav-group"><button type="button">Student area</button><div class="dropdown"><a href="school.html">Register or sign in</a><a href="e-learning.html">Online learning</a><a href="shop.html">Learning materials shop</a></div></div>
 <a href="admissions.html">Admissions</a>
 <a href="contact.html">Contact</a>
-</nav><div class="nav-actions"><a class="btn btn-primary" href="admissions.html">Enquire about a course ↗</a></div><form class="header-search" role="search" action="search.html" method="get" aria-label="Search the website">
-  <input id="siteSearchInput" type="search" name="q" placeholder="Search the website…" autocomplete="off" aria-label="Search all webpages">
-  <button type="submit" aria-label="Search" title="Search"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.8" cy="10.8" r="6.8" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 4.2 4.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
-</form>
-</div></div></header>
-<main class="search-page">
-  <div class="container">
-    <div class="search-intro">
-      <p class="eyebrow">WEBSITE SEARCH</p>
-      <h1>What are you looking for?</h1>
-      <p>Search across our courses, fees, admissions, learning resources, school information and more.</p>
-    </div>
-    <div id="searchStatus" class="search-status" role="status" aria-live="polite">Loading website search…</div>
-    <div id="searchResults" class="search-results"></div>
-  </div>
-</main>
-<footer class="site-footer">
-<div class="footer-invitation"><div class="container footer-invitation-inner"><div><span class="footer-overline">YOUR NEXT CHAPTER</span><h2>A world of language.<br><em>More ways to belong.</em></h2><p>Inclusive language learning for people of every nationality, race, religion, gender and background.</p></div><a class="btn btn-primary" href="admissions.html">Talk to the school <span aria-hidden="true">↗</span></a></div></div>
-<div class="container footer-main"><div class="footer-identity"><a class="footer-logo" href="index.html"><img src="logo.png" alt="Sprachenschule emblem"><span>Sprachenschule<small>LANGUAGE · CULTURE · OPPORTUNITY</small></span></a><p>Language learning for skills, confidence and new opportunities.</p><p class="footer-location">Nairobi, Kenya · Learning without borders</p><a class="footer-contact-link" href="contact.html">Contact the school <span>↗</span></a></div>
-<div class="footer-col"><h4>Learn</h4><a href="courses.html">All courses</a><a href="courses.html#german">German A1–B2</a><a href="courses.html#other-languages">Other languages</a><a href="learning-method.html">How learning works</a></div>
-<div class="footer-col"><h4>Explore</h4><a href="about.html">About Sprachenschule</a><a href="germany-pathways.html">Germany pathways</a><a href="faq.html">Frequently asked questions</a><a href="admissions.html">Admissions</a></div>
-<div class="footer-col"><h4>Student area</h4><a href="school.html">Register / sign in</a><a href="e-learning.html">Online learning</a><a href="shop.html">Learning materials</a><a href="contact.html">Contact and support</a></div></div>
-<div class="footer-standards"><div class="container standards-inner"><span class="standards-title">OUR LEARNING FRAMEWORK</span><span class="standard-chip">CEFR-aligned learning</span><span class="standard-chip">Inclusive by design</span><span class="standard-chip">Language · Culture · Opportunity</span></div></div>
-<div class="container footer-bottom"><span>© <span id="year"></span> Sprachenschule · Nairobi, Kenya</span><span>Learning with respect, access and opportunity for all.</span></div></footer>
-<script>
-(function(){
-  const params = new URLSearchParams(window.location.search);
-  const query = (params.get('q') || '').trim();
-  const input = document.querySelector('.header-search input');
-  const status = document.getElementById('searchStatus');
-  const results = document.getElementById('searchResults');
-  if (input) input.value = query;
-  const normalize = value => value.toLocaleLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');
-  function excerpt(content, terms) {
-    const lower = normalize(content);
-    let at = -1;
-    for (const term of terms) { const found = lower.indexOf(term); if(found >= 0 && (at < 0 || found < at)) at = found; }
-    if (at < 0) return content.slice(0, 210) + (content.length > 210 ? '…' : '');
-    const start = Math.max(0, at - 75), end = Math.min(content.length, at + 160);
-    return (start ? '…' : '') + content.slice(start, end).trim() + (end < content.length ? '…' : '');
-  }
-  fetch('search-index.json').then(r => { if(!r.ok) throw new Error('Search index unavailable'); return r.json(); }).then(pages => {
-    if (!query) { status.textContent = 'Enter a word or phrase in the search bar above to search all website pages.'; return; }
-    const terms = normalize(query).split(/\\s+/).filter(Boolean);
-    const ranked = pages.map(page => {
-      const title = normalize(page.title), content = normalize(page.content), full = title + ' ' + content;
-      let score = 0;
-      for (const term of terms) {
-        if (title.includes(term)) score += 12;
-        const count = Math.max(0, content.split(term).length - 1);
-        score += Math.min(count, 8);
-        if (full.includes(term)) score += 2;
-      }
-      if (terms.length > 1 && terms.every(term => full.includes(term))) score += 10;
-      return {page, score};
-    }).filter(item => item.score > 0).sort((a,b) => b.score - a.score);
-    results.replaceChildren();
-    if (!ranked.length) { status.textContent = 'No results found for “' + query + '”. Try a different word, course level, topic or phrase.'; return; }
-    status.textContent = ranked.length + ' page' + (ranked.length === 1 ? '' : 's') + ' found for “' + query + '”.';
-    ranked.forEach(({page}) => {
-      const a = document.createElement('a'); a.className = 'search-result'; a.href = page.url;
-      const h = document.createElement('h2'); h.textContent = page.title;
-      const p = document.createElement('p'); p.textContent = excerpt(page.content, terms);
-      const url = document.createElement('span'); url.className = 'result-url'; url.textContent = page.url;
-      a.append(h,p,url); results.append(a);
-    });
-  }).catch(() => { status.textContent = 'Website search is temporarily unavailable. Please try again later.'; });
-})();
-</script>
-</body></html>
+</nav><div class="nav-actions"><form class="site-search" action="search.html" method="get" role="search"><input type="search" name="q" placeholder="Search" aria-label="Search the website"><button type="submit" aria-label="Submit search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg></button></form><a class="btn btn-primary nav-enquire" href="admissions.html">Enquire</a></div>
+</div></div></header><main class="section"><div class="container"><div class="section-heading"><p class="eyebrow">Website search</p><h1>Search Sprachenschule</h1><p>Find courses, admissions information, learning resources, FAQs and blog articles.</p></div><form class="search-page-form" action="search.html" method="get" role="search"><input id="pageSearchInput" type="search" name="q" placeholder="Search courses, German A1, admissions…" aria-label="Search website content"><button class="btn btn-primary" type="submit">Search</button></form><p id="searchSummary" aria-live="polite">Enter a search term to find pages.</p><div id="searchResults" class="search-results"></div></div></main><script src="search.js" defer></script><script>function toggleMenu(){const n=document.getElementById('primaryNav');if(n){const open=n.classList.toggle('open');document.querySelector('.menu-toggle')?.setAttribute('aria-expanded',String(open));}}</script></body></html>
