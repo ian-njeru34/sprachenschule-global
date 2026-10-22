@@ -101,3 +101,17 @@ body.school-page main>section{background:transparent;}
 @media(max-width:820px){#other-languages .course-video-grid{grid-template-columns:repeat(2,minmax(0,1fr));}#other-languages .course-video-card{min-height:250px;padding:23px;}}
 @media(max-width:560px){#other-languages .course-video-grid{grid-template-columns:1fr;}#other-languages .course-video-card{min-height:280px;}#other-languages .course-video-card:nth-child(4){grid-column:auto;}}
 @media(prefers-reduced-motion:reduce){#other-languages .course-video-card:before{animation:none;}
+
+
+/* Floating November intake sticker on the homepage hero */
+.hero-video-hero{position:relative}
+.intake-sticker{position:absolute;z-index:8;top:clamp(22px,4vw,48px);right:max(24px,calc((100vw - 1180px)/2));display:flex;align-items:center;gap:11px;padding:13px 18px 13px 14px;border:1px solid rgba(255,255,255,.65);border-radius:16px;background:rgba(255,255,255,.96);color:#173d35;text-decoration:none;box-shadow:0 12px 34px rgba(0,0,0,.22);backdrop-filter:blur(12px);transform:rotate(2deg);transition:transform .2s ease,box-shadow .2s ease}
+.intake-sticker:hover,.intake-sticker:focus-visible{transform:rotate(0) translateY(-3px);box-shadow:0 16px 38px rgba(0,0,0,.3)}
+.intake-sticker-dot{width:11px;height:11px;flex:0 0 11px;border-radius:50%;background:#25a56a;box-shadow:0 0 0 5px rgba(37,165,106,.13);animation:intake-pulse 1.8s infinite}
+.intake-sticker strong,.intake-sticker small{display:block;white-space:nowrap}
+.intake-sticker strong{font-size:.88rem;line-height:1.25;font-weight:850}
+.intake-sticker small{margin-top:3px;color:#53706a;font-size:.78rem;font-weight:700}
+.intake-sticker small span{color:#148052;margin-left:4px}
+@keyframes intake-pulse{0%,100%{box-shadow:0 0 0 4px rgba(37,165,106,.12)}50%{box-shadow:0 0 0 8px rgba(37,165,106,.02)}}
+@media(max-width:820px){.intake-sticker{top:18px;right:16px;padding:10px 13px 10px 11px;gap:9px}.intake-sticker strong{font-size:.76rem}.intake-sticker small{font-size:.7rem}}
+@media(max-width:420px){.intake-sticker{top:12px;right:10px;padding:9px 11px;transform:rotate(0)}.intake-sticker-dot{width:9px;height:9px;flex-basis:9px}}
