@@ -43,3 +43,24 @@ The project now includes `classroom.html` and a Vercel serverless endpoint at `a
 - The server endpoint refuses students who are not approved or whose `access_expires_at` has passed. It issues a token valid for two hours.
 - The classroom name is currently entered by the user/teacher (for example `german-a1-evening`). Give the exact same name to everyone in that lesson. A later upgrade can add scheduled classes and teacher-managed room creation in the admin dashboard.
 - Screen sharing requires a supported browser and permission from the user. Browser camera/microphone permissions are also required.
+
+
+## New classroom and access controls
+
+- `supabase-schema.sql` is included in this project. Run it in Supabase SQL Editor before testing. It creates the missing profiles/registrar/materials/class schedule/device-session schema and RPC functions.
+- `school.html` supports email/password login and registration, plus Show/Hide password controls.
+- A single active-device lease is enforced through Supabase RPC heartbeats. The lease expires after two minutes without a heartbeat (for example, if a device loses power). This is an application-level guard, not a guarantee against a technically sophisticated user or shared browser profile.
+- `teacher.html` lets authorised teachers schedule a class and join it at lesson time. The student dashboard lists scheduled lessons for the student's approved level.
+- `api/livekit-token.js` now only issues LiveKit tokens for a scheduled room, within the lesson window, and checks course level and assigned teacher. Classroom join is available from 15 minutes before start until 15 minutes after the scheduled end.
+- LiveKit is used for real-time audio/video. The site does not implement recording. Do not enable recording/egress in LiveKit if you want live attendance only.
+- Use private Supabase Storage for protected materials. The current materials table supports a preview URL for starter/testing; do not put paid or private materials at publicly accessible URLs.
+
+## Deployment setup checklist
+
+1. Run `supabase-schema.sql` in Supabase SQL Editor.
+2. In Supabase Authentication, check your email confirmation and redirect URL settings for your deployed Vercel domain.
+3. In Supabase Authentication -> Users, copy the registrar user's UUID. Run the two SQL statements at the end of `supabase-schema.sql` (replace the placeholder UUID) to grant registrar access.
+4. For each teacher, first have them register using `school.html`, then set their role: `update public.profiles set role='teacher' where id='TEACHER-AUTH-UUID';`. Do not make students teachers.
+5. Ensure Vercel Environment Variables include `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `LIVEKIT_URL`, `LIVEKIT_API_KEY`, and `LIVEKIT_API_SECRET`. Set `TEACHER_EMAILS` only if needed; role-based profiles are preferable.
+6. Confirm `config.js` uses the same Supabase project URL and public anon/publishable key. Never put the service-role key or LiveKit API secret in `config.js` or commit them to GitHub.
+7. Commit and redeploy. Test registrar approval with a test student, then schedule a lesson as a teacher and join it from separate teacher/student browsers.

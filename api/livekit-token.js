@@ -60,6 +60,32 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    // Only scheduled rooms can issue tokens. This prevents approved students
+    // from guessing or entering unrelated classroom names.
+    const { data: scheduledClass, error: classError } = await admin
+      .from('scheduled_classes').select('id,title,level,teacher_id,starts_at,duration_minutes,room_name,status')
+      .eq('room_name', roomName).maybeSingle();
+    if (classError) {
+      console.error('Scheduled class lookup failed:', classError.message);
+      return res.status(503).json({ error: 'Could not verify the scheduled lesson.' });
+    }
+    if (!scheduledClass || scheduledClass.status !== 'scheduled') {
+      return res.status(403).json({ error: 'This classroom is not linked to a scheduled lesson. Contact your teacher or registrar.' });
+    }
+    const start = new Date(scheduledClass.starts_at);
+    const end = new Date(start.getTime() + Number(scheduledClass.duration_minutes || 60) * 60000);
+    const now = new Date();
+    if (now < new Date(start.getTime() - 15 * 60000) || now > new Date(end.getTime() + 15 * 60000)) {
+      return res.status(403).json({ error: 'This lesson is not open yet or has already ended. Check the timetable.' });
+    }
+    if (isTeacher) {
+      if (!['admin', 'registrar'].includes(profileRole) && scheduledClass.teacher_id !== user.id) {
+        return res.status(403).json({ error: 'You are not the teacher assigned to this lesson.' });
+      }
+    } else if (String(profile.level || '') !== String(scheduledClass.level || '')) {
+      return res.status(403).json({ error: 'This lesson is for a different course level.' });
+    }
+
     const identity = user.id;
     const token = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
       identity,
