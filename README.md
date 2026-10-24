@@ -72,3 +72,9 @@ The project now includes `classroom.html` and a Vercel serverless endpoint at `a
 - After authentication, the page checks membership in `public.registrars` or a `registrar`/`admin` profile role before showing approvals.
 - `school.html` now redirects registrar/admin accounts to `admin.html`, teacher accounts to `teacher.html`, and students to `dashboard.html`.
 - Create the initial registrar in Supabase Authentication -> Users, then use its Auth user UUID in the registrar bootstrap SQL described in `supabase-schema.sql`.
+
+## Tutor registration and registrar approval
+
+The account form on `school.html` now lets applicants choose Student or Tutor. Tutor sign-ups are marked with `account_type=tutor` and `approval_status=pending`; the sign-in flow blocks tutor applicants from staff access until their profile role is changed to `tutor` by registrar approval.
+
+Before deploying this workflow, run `supabase/migrations/20261024_tutor_registration_approval.sql` in the Supabase SQL Editor. It creates a private tutor-application queue and registrar-only RPCs used by `admin.html`. The migration assumes `public.profiles` has `id` and `role` columns and that `public.registrars(user_id)` is the registrar allowlist. Verify those schema assumptions against the active project first. The registrar dashboard will then show pending tutor applications alongside student approvals.
