@@ -103,3 +103,8 @@ Run `supabase/migrations/20261024_registrar_class_creation_and_student_enrolment
 - Apply `supabase/migrations/20261024_tutor_assigned_classes_materials.sql` in Supabase SQL Editor if it has not already been applied.
 - Apply `supabase/migrations/20261024_force_logout_other_devices.sql` in Supabase SQL Editor to enable the login option that replaces the current user's device-session lease. Review the session table name/columns against the live project first.
 - Student, tutor, registrar, and classroom pages provide a Logout action.
+
+
+## Registrar schedule and live classroom update
+
+Apply `supabase/migrations/20261024_registrar_live_schedule_edit.sql` in Supabase SQL Editor after the existing classroom and registrar migrations. It adds class presence heartbeats, restricts registrar schedule visibility to 12 hours before start through 6 hours after the scheduled end, and allows editing existing classes. Deploy the updated `admin.html`, `teacher.html`, and `classroom.html` together. Test with a tutor and an enrolled student account.
