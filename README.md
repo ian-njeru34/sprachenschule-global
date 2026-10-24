@@ -78,3 +78,15 @@ The project now includes `classroom.html` and a Vercel serverless endpoint at `a
 The account form on `school.html` now lets applicants choose Student or Tutor. Tutor sign-ups are marked with `account_type=tutor` and `approval_status=pending`; the sign-in flow blocks tutor applicants from staff access until their profile role is changed to `tutor` by registrar approval.
 
 Before deploying this workflow, run `supabase/migrations/20261024_tutor_registration_approval.sql` in the Supabase SQL Editor. It creates a private tutor-application queue and registrar-only RPCs used by `admin.html`. The migration assumes `public.profiles` has `id` and `role` columns and that `public.registrars(user_id)` is the registrar allowlist. Verify those schema assumptions against the active project first. The registrar dashboard will then show pending tutor applications alongside student approvals.
+
+## Registrar approvals, class assignment, and classroom materials
+
+A second migration, `supabase/migrations/20261024_classroom_governance_and_materials.sql`, adds registrar-only class assignment RPCs and a private `class-materials` storage bucket. Review the migration against the live Supabase schema before applying it. It expects `profiles` to include `role`, `full_name`, `access_approved`, and `access_expires_at`, and `scheduled_classes` to include `id`, `title`, `level`, `teacher_id`, `starts_at`, `duration_minutes`, `room_name`, and `status`.
+
+- Registrars approve student access using the existing `approve_student` workflow and approve tutor applications using `registrar_approve_tutor`.
+- Registrars can assign an approved tutor to a scheduled class from the Registrar Dashboard.
+- Tutors can upload notes/PDFs, audio, and video to classes assigned to them. Tutors can hide or re-show their materials, but cannot delete them.
+- Registrar material deletion removes the storage object and its database record.
+- Student material listings and storage access are restricted by row-level security to approved students in the matching course level during the scheduled live-class window. Materials are presented inside the classroom, and the tutor can present audio/video to participants.
+
+The migration must be applied to Supabase as well as committed to GitHub. Test with separate student, approved tutor, pending tutor, and registrar accounts before production use. Existing RLS policies and schema names can differ; do not apply blindly to production.
