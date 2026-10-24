@@ -10,7 +10,16 @@
 <a href="admissions.html">Admissions</a>
 <a href="contact.html">Contact</a>
 </nav><div class="nav-actions"><form class="site-search" action="search.html" method="get" role="search"><input type="search" name="q" placeholder="Search" aria-label="Search the website"><button type="submit" aria-label="Submit search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg></button></form><a class="btn btn-primary nav-enquire" href="admissions.html">Enquire</a></div>
-</div></div></header><main><section><div class="container"><div class="section-head"><div class="eyebrow">Authorised staff</div><h1>Student approvals</h1><p class="muted">Review registration status and approve four-month access only after tuition payment has been confirmed.</p></div><div class="card"><p>This dashboard requires a Supabase account listed in the <code>registrars</code> table. The secure approval operation is defined in the supplied SQL schema.</p><div id="students">Connect Supabase to load pending students.</div></div></div></section></main><div class="social-floats" aria-label="Social media links"><a class="social-float whatsapp-float" href="https://wa.me/254118515919" aria-label="Contact Sprachenschule on WhatsApp" title="WhatsApp us"><svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16.04 3C8.9 3 3.1 8.77 3.1 15.88c0 2.28.6 4.5 1.75 6.47L3 29l6.84-1.79a12.96 12.96 0 0 0 6.2 1.58h.01c7.13 0 12.93-5.78 12.93-12.89 0-3.44-1.35-6.67-3.79-9.1A12.86 12.86 0 0 0 16.04 3zm0 23.6c-1.93 0-3.82-.52-5.46-1.5l-.39-.23-4.06 1.06 1.08-3.95-.26-.4a10.68 10.68 0 0 1-1.64-5.7c0-5.92 4.82-10.73 10.74-10.73 2.87 0 5.56 1.12 7.59 3.15a10.66 10.66 0 0 1 3.14 7.6c0 5.91-4.82 10.7-10.74 10.7zm5.9-8.03c-.32-.16-1.9-.94-2.2-1.05-.3-.11-.51-.16-.73.16-.21.32-.84 1.05-1.03 1.27-.19.21-.38.24-.7.08-.32-.16-1.36-.5-2.59-1.6-.96-.85-1.61-1.9-1.8-2.22-.19-.32-.02-.49.14-.65.14-.14.32-.38.48-.57.16-.19.21-.32.32-.54.1-.21.05-.4-.03-.56-.08-.16-.73-1.76-1-2.41-.27-.63-.54-.55-.73-.56l-.62-.01c-.22 0-.57.08-.87.4-.3.32-1.14 1.1-1.14 2.68 0 1.58 1.17 3.1 1.33 3.31.16.21 2.3 3.5 5.57 4.9.78.33 1.39.53 1.86.68.78.25 1.49.22 2.05.13.63-.1 1.9-.78 2.17-1.53.27-.75.27-1.39.19-1.53-.08-.13-.29-.21-.62-.37z"/></svg></a><a class="social-float facebook-float" href="https://www.facebook.com/" aria-label="Find Sprachenschule on Facebook" title="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.6 21v-8.2h2.75l.41-3.2H13.6V7.56c0-.93.26-1.56 1.59-1.56h1.69V3.14c-.29-.04-1.29-.14-2.46-.14-2.44 0-4.11 1.49-4.11 4.23V9.6H7.55v3.2h2.76V21h3.29z"/></svg></a></div>
+</div></div></header><main>
+<section><div class="container"><div class="section-head"><div class="eyebrow">Authorised staff</div><h1>Registrar Dashboard</h1><p class="muted">Sign in with your registrar email and password to review student approvals.</p></div>
+<div class="card" id="registrarLoginCard" style="max-width:620px;margin:0 auto 2rem">
+<h2>Registrar sign in</h2><p class="muted">Use the account you created in Supabase Authentication and added to the registrars table.</p>
+<form id="registrarLoginForm" class="form"><div class="field"><label for="registrarEmail">Email address</label><input id="registrarEmail" type="email" autocomplete="username" required></div>
+<div class="field"><label for="registrarPassword">Password</label><div class="password-wrap"><input id="registrarPassword" type="password" autocomplete="current-password" required><button type="button" class="password-toggle" id="toggleRegistrarPassword">Show</button></div></div>
+<button class="btn btn-navy" type="submit">Sign in as registrar</button><p id="registrarLoginMsg" class="notice hidden" role="status"></p></form>
+<p class="form-note">If you have not yet created a Supabase Auth user or added it to the registrars table, sign-in alone will not grant registrar access.</p></div>
+<div class="card hidden" id="registrarDashboardCard"><div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap"><div><h2>Pending student approvals</h2><p class="muted" id="registrarSignedInAs"></p></div><button class="btn btn-outline" id="registrarSignOut" type="button">Sign out</button></div><div id="students" aria-live="polite">Loading pending students…</div></div>
+</div></section></main><div class="social-floats" aria-label="Social media links"><a class="social-float whatsapp-float" href="https://wa.me/254118515919" aria-label="Contact Sprachenschule on WhatsApp" title="WhatsApp us"><svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16.04 3C8.9 3 3.1 8.77 3.1 15.88c0 2.28.6 4.5 1.75 6.47L3 29l6.84-1.79a12.96 12.96 0 0 0 6.2 1.58h.01c7.13 0 12.93-5.78 12.93-12.89 0-3.44-1.35-6.67-3.79-9.1A12.86 12.86 0 0 0 16.04 3zm0 23.6c-1.93 0-3.82-.52-5.46-1.5l-.39-.23-4.06 1.06 1.08-3.95-.26-.4a10.68 10.68 0 0 1-1.64-5.7c0-5.92 4.82-10.73 10.74-10.73 2.87 0 5.56 1.12 7.59 3.15a10.66 10.66 0 0 1 3.14 7.6c0 5.91-4.82 10.7-10.74 10.7zm5.9-8.03c-.32-.16-1.9-.94-2.2-1.05-.3-.11-.51-.16-.73.16-.21.32-.84 1.05-1.03 1.27-.19.21-.38.24-.7.08-.32-.16-1.36-.5-2.59-1.6-.96-.85-1.61-1.9-1.8-2.22-.19-.32-.02-.49.14-.65.14-.14.32-.38.48-.57.16-.19.21-.32.32-.54.1-.21.05-.4-.03-.56-.08-.16-.73-1.76-1-2.41-.27-.63-.54-.55-.73-.56l-.62-.01c-.22 0-.57.08-.87.4-.3.32-1.14 1.1-1.14 2.68 0 1.58 1.17 3.1 1.33 3.31.16.21 2.3 3.5 5.57 4.9.78.33 1.39.53 1.86.68.78.25 1.49.22 2.05.13.63-.1 1.9-.78 2.17-1.53.27-.75.27-1.39.19-1.53-.08-.13-.29-.21-.62-.37z"/></svg></a><a class="social-float facebook-float" href="https://www.facebook.com/" aria-label="Find Sprachenschule on Facebook" title="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.6 21v-8.2h2.75l.41-3.2H13.6V7.56c0-.93.26-1.56 1.59-1.56h1.69V3.14c-.29-.04-1.29-.14-2.46-.14-2.44 0-4.11 1.49-4.11 4.23V9.6H7.55v3.2h2.76V21h3.29z"/></svg></a></div>
 <footer class="site-footer">
 <div class="footer-invitation"><div class="container footer-invitation-inner"><div><span class="footer-overline">YOUR NEXT CHAPTER</span><h2>A world of language.<br><em>More ways to belong.</em></h2><p>Inclusive language learning for people of every nationality, race, religion, gender and background.</p></div><a class="btn btn-primary" href="admissions.html">Talk to the school <span aria-hidden="true">↗</span></a></div></div>
 <div class="container footer-main"><div class="footer-identity"><a class="footer-logo" href="index.html"><img src="logo.png" alt="Sprachenschule emblem"><span>Sprachenschule<small>LANGUAGE · CULTURE · OPPORTUNITY</small></span></a><p>Language learning for skills, confidence and new opportunities.</p><p class="footer-location">Nairobi, Kenya · Learning without borders</p><a class="footer-contact-link" href="contact.html">Contact the school <span>↗</span></a></div>
@@ -18,7 +27,60 @@
 <div class="footer-col"><h4>Explore</h4><a href="blog.html">Blog and language tips</a><a href="about.html">About Sprachenschule</a><a href="germany-pathways.html">Germany pathways</a><a href="faq.html">Frequently asked questions</a><a href="admissions.html">Admissions</a></div>
 <div class="footer-col"><h4>Student area</h4><a href="school.html">Register / sign in</a><a href="e-learning.html">Online learning</a><a href="classroom.html">Virtual classroom</a><a href="shop.html">Learning materials</a><a href="contact.html">Contact and support</a></div></div>
 <div class="footer-standards"><div class="container standards-inner"><span class="standards-title">OUR LEARNING FRAMEWORK</span><span class="standard-chip">CEFR-aligned learning</span><span class="standard-chip">Inclusive by design</span><span class="standard-chip">Language · Culture · Opportunity</span></div></div>
-<div class="container footer-bottom"><span>© <span id="year"></span> Sprachenschule · Nairobi, Kenya</span><span>Learning with respect, access and opportunity for all.</span></div></footer><script src="config.js"></script><script src="session-guard.js"></script><script>const sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);async function load(){const {data,error}=await sb.rpc('registrar_pending_students');if(error){students.textContent=error.message;return}if(!data?.length){students.innerHTML='<p class="muted">No pending students.</p>';return}students.innerHTML=`<table class="table"><tr><th>Name</th><th>Email</th><th>Level</th><th>Action</th></tr>`+data.map(s=>`<tr><td>${s.full_name||''}</td><td>${s.email||''}</td><td>${s.level||''}</td><td><button class="btn btn-gold" onclick="approve('${s.id}')">Approve 4 months</button></td></tr>`).join('')+'</table>'}async function approve(id){const {error}=await sb.rpc('approve_student',{student_id:id,student_level:null});if(error)alert(error.message);else load()}load();year.textContent=new Date().getFullYear()</script><script>
+<div class="container footer-bottom"><span>© <span id="year"></span> Sprachenschule · Nairobi, Kenya</span><span>Learning with respect, access and opportunity for all.</span></div></footer><script src="config.js"></script><script>
+const sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+const loginCard = document.getElementById('registrarLoginCard');
+const dashboardCard = document.getElementById('registrarDashboardCard');
+const loginForm = document.getElementById('registrarLoginForm');
+const loginMsg = document.getElementById('registrarLoginMsg');
+const studentsBox = document.getElementById('students');
+function showLoginMessage(message){loginMsg.textContent=message;loginMsg.classList.remove('hidden');}
+function clearLoginMessage(){loginMsg.textContent='';loginMsg.classList.add('hidden');}
+function escapeHtml(value){return String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function showLogin(){loginCard.classList.remove('hidden');dashboardCard.classList.add('hidden');}
+function showDashboard(email){loginCard.classList.add('hidden');dashboardCard.classList.remove('hidden');document.getElementById('registrarSignedInAs').textContent='Signed in as '+email;}
+async function verifyRegistrar(user){
+  const {data: registrarRow, error: registrarError}=await sb.from('registrars').select('user_id').eq('user_id',user.id).maybeSingle();
+  if(registrarError) throw new Error('Could not check registrar permissions: '+registrarError.message+'. Confirm the supplied SQL schema has been run.');
+  const {data: profile, error: profileError}=await sb.from('profiles').select('role').eq('id',user.id).maybeSingle();
+  if(profileError) throw new Error('Could not check your profile: '+profileError.message);
+  return Boolean(registrarRow || ['registrar','admin'].includes(profile?.role));
+}
+async function loadStudents(){
+  studentsBox.textContent='Loading pending students…';
+  const {data,error}=await sb.rpc('registrar_pending_students');
+  if(error){studentsBox.textContent='Could not load applications: '+error.message;return;}
+  if(!data || !data.length){studentsBox.innerHTML='<p class="muted">No pending students.</p>';return;}
+  studentsBox.innerHTML='<div style="overflow-x:auto"><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Level</th><th>Payment confirmed</th><th>Action</th></tr></thead><tbody>'+data.map(s=>'<tr><td>'+escapeHtml(s.full_name)+'</td><td>'+escapeHtml(s.email)+'</td><td>'+escapeHtml(s.level)+'</td><td>'+ (s.payment_confirmed?'Yes':'No')+'</td><td><button class="btn btn-gold" type="button" data-approve="'+escapeHtml(s.id)+'">Approve 4 months</button></td></tr>').join('')+'</tbody></table></div>';
+  studentsBox.querySelectorAll('[data-approve]').forEach(button=>button.addEventListener('click',()=>approveStudent(button.dataset.approve,button)));
+}
+async function approveStudent(id,button){
+  if(!confirm('Approve this student and start four-month course access? Confirm tuition payment first.')) return;
+  button.disabled=true;button.textContent='Approving…';
+  const {error}=await sb.rpc('approve_student',{student_id:id,student_level:null});
+  if(error){alert('Approval failed: '+error.message);button.disabled=false;button.textContent='Approve 4 months';return;}
+  await loadStudents();
+}
+loginForm.addEventListener('submit',async event=>{
+  event.preventDefault();clearLoginMessage();
+  if(!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY){showLoginMessage('Supabase is not configured. Check config.js.');return;}
+  const email=document.getElementById('registrarEmail').value.trim();
+  const password=document.getElementById('registrarPassword').value;
+  const submit=loginForm.querySelector('button[type="submit"]');submit.disabled=true;submit.textContent='Signing in…';
+  try{
+    const {data,error}=await sb.auth.signInWithPassword({email,password});
+    if(error) throw new Error(error.message);
+    const authorised=await verifyRegistrar(data.user);
+    if(!authorised){await sb.auth.signOut();throw new Error('This account is not authorised as a registrar yet. In Supabase SQL Editor, add its Auth user UUID to public.registrars and set its profile role to registrar.');}
+    showDashboard(data.user.email||email);await loadStudents();
+  }catch(error){showLoginMessage(error.message||'Sign-in failed.');}
+  finally{submit.disabled=false;submit.textContent='Sign in as registrar';}
+});
+document.getElementById('toggleRegistrarPassword').addEventListener('click',()=>{const input=document.getElementById('registrarPassword');const show=input.type==='password';input.type=show?'text':'password';document.getElementById('toggleRegistrarPassword').textContent=show?'Hide':'Show';});
+document.getElementById('registrarSignOut').addEventListener('click',async()=>{await sb.auth.signOut();showLogin();loginForm.reset();clearLoginMessage();});
+(async()=>{const {data}=await sb.auth.getSession();if(!data.session)return;try{const user=data.session.user;if(await verifyRegistrar(user)){showDashboard(user.email||'');await loadStudents();}else{await sb.auth.signOut();showLogin();showLoginMessage('Your current account is not authorised as a registrar. Sign in with the registrar account.');}}catch(error){showLogin();showLoginMessage(error.message||'Could not verify registrar access.');}})();
+document.getElementById('year').textContent=new Date().getFullYear();
+</script><script>
 function toggleMenu(){const n=document.getElementById('primaryNav');const b=document.querySelector('.menu-toggle');if(!n||!b)return;const open=n.classList.toggle('open');b.setAttribute('aria-expanded',String(open));b.textContent=open?'×':'☰'}
 document.addEventListener('click',e=>{if(e.target.matches('.nav-group>button')){const menu=e.target.nextElementSibling;const visible=getComputedStyle(menu).display!=='none';if(window.innerWidth<=820){document.querySelectorAll('.dropdown').forEach(d=>d.style.display='none');menu.style.display=visible?'none':'grid'}}});
 if(document.getElementById('year'))document.getElementById('year').textContent=new Date().getFullYear();

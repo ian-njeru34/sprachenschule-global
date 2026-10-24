@@ -5,7 +5,7 @@
 - `school.html` — student registration/login
 - `dashboard.html` — protected learning area; only approved students with unexpired 4-month access can see level materials
 - `shop.html` — learning material shop for video/audio/handouts
-- `admin.html` — registrar approval dashboard
+- `admin.html` — registrar sign-in and approval dashboard
 - `config.js` — Supabase URL and anon key
 - `supabase-schema.sql` — database, RLS policies and registrar functions
 - `styles.css` — shared design
@@ -64,3 +64,11 @@ The project now includes `classroom.html` and a Vercel serverless endpoint at `a
 5. Ensure Vercel Environment Variables include `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `LIVEKIT_URL`, `LIVEKIT_API_KEY`, and `LIVEKIT_API_SECRET`. Set `TEACHER_EMAILS` only if needed; role-based profiles are preferable.
 6. Confirm `config.js` uses the same Supabase project URL and public anon/publishable key. Never put the service-role key or LiveKit API secret in `config.js` or commit them to GitHub.
 7. Commit and redeploy. Test registrar approval with a test student, then schedule a lesson as a teacher and join it from separate teacher/student browsers.
+
+
+## Registrar sign-in fix
+
+- Open `admin.html` directly to see the registrar email/password sign-in form.
+- After authentication, the page checks membership in `public.registrars` or a `registrar`/`admin` profile role before showing approvals.
+- `school.html` now redirects registrar/admin accounts to `admin.html`, teacher accounts to `teacher.html`, and students to `dashboard.html`.
+- Create the initial registrar in Supabase Authentication -> Users, then use its Auth user UUID in the registrar bootstrap SQL described in `supabase-schema.sql`.
