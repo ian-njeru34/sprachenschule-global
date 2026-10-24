@@ -17,7 +17,14 @@
 <div class="field"><label for="registrarPassword">Password</label><div class="password-wrap"><input id="registrarPassword" type="password" autocomplete="current-password" required><button type="button" class="password-toggle" id="toggleRegistrarPassword">Show</button></div></div>
 <button class="btn btn-navy" type="submit">Sign in as registrar</button><p id="registrarLoginMsg" class="notice hidden" role="status"></p></form>
 <p class="form-note">If you have not yet created a Supabase Auth user or added it to the registrars table, sign-in alone will not grant registrar access.</p></div>
-<div class="card hidden" id="registrarDashboardCard"><div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap"><div><h2>Pending student approvals</h2><p class="muted" id="registrarSignedInAs"></p></div><button class="btn btn-outline" id="registrarSignOut" type="button">Sign out</button></div><div id="students" aria-live="polite">Loading pending students…</div><hr><h2>Pending tutor applications</h2><p class="muted">Tutor accounts remain restricted until approved here.</p><div id="tutors" aria-live="polite">Loading pending tutors…</div><hr><h2>Assign tutors to classes</h2><p class="muted">Only approved tutors appear in the tutor list.</p><div id="classAssignments" aria-live="polite">Loading classes…</div><hr><h2>Class materials moderation</h2><p class="muted">Registrars can permanently delete tutor-uploaded materials.</p><div id="materialsModeration" aria-live="polite">Loading materials…</div></div>
+<div class="card hidden" id="registrarDashboardCard">
+<div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap"><div><h2>Registrar overview</h2><p class="muted" id="registrarSignedInAs"></p></div><button class="btn btn-outline" id="registrarSignOut" type="button">Sign out</button></div>
+<div id="registrarCounts" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:18px 0" aria-live="polite"><div class="card">Loading account totals…</div></div>
+<hr><h2>Pending student approvals</h2><div id="students" aria-live="polite">Loading pending students…</div>
+<hr><h2>Pending tutor applications</h2><p class="muted">Tutor accounts remain restricted until approved here.</p><div id="tutors" aria-live="polite">Loading pending tutors…</div>
+<hr><h2>Assign tutors to classes</h2><p class="muted">Only approved tutors appear in the tutor list.</p><div id="classAssignments" aria-live="polite">Loading classes…</div>
+<hr><h2>Class materials moderation</h2><p class="muted">Registrars can permanently delete tutor-uploaded materials.</p><div id="materialsModeration" aria-live="polite">Loading materials…</div>
+</div>
 </div></section></main><div class="social-floats" aria-label="Social media links"><a class="social-float whatsapp-float" href="https://wa.me/254118515919" aria-label="Contact Sprachenschule on WhatsApp" title="WhatsApp us"><svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16.04 3C8.9 3 3.1 8.77 3.1 15.88c0 2.28.6 4.5 1.75 6.47L3 29l6.84-1.79a12.96 12.96 0 0 0 6.2 1.58h.01c7.13 0 12.93-5.78 12.93-12.89 0-3.44-1.35-6.67-3.79-9.1A12.86 12.86 0 0 0 16.04 3zm0 23.6c-1.93 0-3.82-.52-5.46-1.5l-.39-.23-4.06 1.06 1.08-3.95-.26-.4a10.68 10.68 0 0 1-1.64-5.7c0-5.92 4.82-10.73 10.74-10.73 2.87 0 5.56 1.12 7.59 3.15a10.66 10.66 0 0 1 3.14 7.6c0 5.91-4.82 10.7-10.74 10.7zm5.9-8.03c-.32-.16-1.9-.94-2.2-1.05-.3-.11-.51-.16-.73.16-.21.32-.84 1.05-1.03 1.27-.19.21-.38.24-.7.08-.32-.16-1.36-.5-2.59-1.6-.96-.85-1.61-1.9-1.8-2.22-.19-.32-.02-.49.14-.65.14-.14.32-.38.48-.57.16-.19.21-.32.32-.54.1-.21.05-.4-.03-.56-.08-.16-.73-1.76-1-2.41-.27-.63-.54-.55-.73-.56l-.62-.01c-.22 0-.57.08-.87.4-.3.32-1.14 1.1-1.14 2.68 0 1.58 1.17 3.1 1.33 3.31.16.21 2.3 3.5 5.57 4.9.78.33 1.39.53 1.86.68.78.25 1.49.22 2.05.13.63-.1 1.9-.78 2.17-1.53.27-.75.27-1.39.19-1.53-.08-.13-.29-.21-.62-.37z"/></svg></a><a class="social-float facebook-float" href="https://www.facebook.com/" aria-label="Find Sprachenschule on Facebook" title="Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.6 21v-8.2h2.75l.41-3.2H13.6V7.56c0-.93.26-1.56 1.59-1.56h1.69V3.14c-.29-.04-1.29-.14-2.46-.14-2.44 0-4.11 1.49-4.11 4.23V9.6H7.55v3.2h2.76V21h3.29z"/></svg></a></div>
 <footer class="site-footer">
 <div class="footer-invitation"><div class="container footer-invitation-inner"><div><span class="footer-overline">YOUR NEXT CHAPTER</span><h2>A world of language.<br><em>More ways to belong.</em></h2><p>Inclusive language learning for people of every nationality, race, religion, gender and background.</p></div><a class="btn btn-primary" href="admissions.html">Talk to the school <span aria-hidden="true">↗</span></a></div></div>
@@ -45,6 +52,15 @@ async function verifyRegistrar(user){
   const {data: profile, error: profileError}=await sb.from('profiles').select('role').eq('id',user.id).maybeSingle();
   if(profileError) throw new Error('Could not check your profile: '+profileError.message);
   return Boolean(registrarRow || ['registrar','admin'].includes(profile?.role));
+}
+async function loadRegistrarCounts(){
+  const box=document.getElementById('registrarCounts');
+  const {data,error}=await sb.rpc('registrar_dashboard_counts');
+  if(error){box.innerHTML='<p class="notice">Could not load approved account totals: '+escapeHtml(error.message)+'</p>';return;}
+  const row=Array.isArray(data)?data[0]:data;
+  if(!row){box.textContent='No account totals returned.';return;}
+  const cards=[['Approved students',row.approved_students],['Approved tutors',row.approved_tutors],['Pending students',row.pending_students],['Pending tutors',row.pending_tutors]];
+  box.innerHTML=cards.map(([label,value])=>`<div class="card" style="padding:18px"><p class="muted" style="margin:0 0 6px">${escapeHtml(label)}</p><p style="font-size:2rem;font-weight:700;margin:0">${Number(value||0).toLocaleString()}</p></div>`).join('');
 }
 async function loadStudents(){
   studentsBox.textContent='Loading pending students…';
@@ -81,14 +97,14 @@ async function approveTutor(id,button){
   button.disabled=true;button.textContent='Approving…';
   const {error}=await sb.rpc('registrar_approve_tutor',{application_id:id});
   if(error){alert('Tutor approval failed: '+error.message);button.disabled=false;button.textContent='Approve tutor';return;}
-  await loadTutors();
+  await Promise.all([loadTutors(),loadRegistrarCounts()]);
 }
 async function approveStudent(id,button){
   if(!confirm('Approve this student and start four-month course access? Confirm tuition payment first.')) return;
   button.disabled=true;button.textContent='Approving…';
   const {error}=await sb.rpc('approve_student',{student_id:id,student_level:null});
   if(error){alert('Approval failed: '+error.message);button.disabled=false;button.textContent='Approve 4 months';return;}
-  await loadStudents();
+  await Promise.all([loadStudents(),loadRegistrarCounts()]);
 }
 loginForm.addEventListener('submit',async event=>{
   event.preventDefault();clearLoginMessage();
@@ -101,13 +117,13 @@ loginForm.addEventListener('submit',async event=>{
     if(error) throw new Error(error.message);
     const authorised=await verifyRegistrar(data.user);
     if(!authorised){await sb.auth.signOut();throw new Error('This account is not authorised as a registrar yet. In Supabase SQL Editor, add its Auth user UUID to public.registrars and set its profile role to registrar.');}
-    showDashboard(data.user.email||email);await Promise.all([loadStudents(),loadTutors(),loadAssignments(),loadMaterialsModeration()]);
+    showDashboard(data.user.email||email);await Promise.all([loadRegistrarCounts(),loadStudents(),loadTutors(),loadAssignments(),loadMaterialsModeration()]);
   }catch(error){showLoginMessage(error.message||'Sign-in failed.');}
   finally{submit.disabled=false;submit.textContent='Sign in as registrar';}
 });
 document.getElementById('toggleRegistrarPassword').addEventListener('click',()=>{const input=document.getElementById('registrarPassword');const show=input.type==='password';input.type=show?'text':'password';document.getElementById('toggleRegistrarPassword').textContent=show?'Hide':'Show';});
 document.getElementById('registrarSignOut').addEventListener('click',async()=>{await sb.auth.signOut();showLogin();loginForm.reset();clearLoginMessage();});
-(async()=>{const {data}=await sb.auth.getSession();if(!data.session)return;try{const user=data.session.user;if(await verifyRegistrar(user)){showDashboard(user.email||'');await Promise.all([loadStudents(),loadTutors(),loadAssignments(),loadMaterialsModeration()]);}else{await sb.auth.signOut();showLogin();showLoginMessage('Your current account is not authorised as a registrar. Sign in with the registrar account.');}}catch(error){showLogin();showLoginMessage(error.message||'Could not verify registrar access.');}})();
+(async()=>{const {data}=await sb.auth.getSession();if(!data.session)return;try{const user=data.session.user;if(await verifyRegistrar(user)){showDashboard(user.email||'');await Promise.all([loadRegistrarCounts(),loadStudents(),loadTutors(),loadAssignments(),loadMaterialsModeration()]);}else{await sb.auth.signOut();showLogin();showLoginMessage('Your current account is not authorised as a registrar. Sign in with the registrar account.');}}catch(error){showLogin();showLoginMessage(error.message||'Could not verify registrar access.');}})();
 document.getElementById('year').textContent=new Date().getFullYear();
 </script><script>
 function toggleMenu(){const n=document.getElementById('primaryNav');const b=document.querySelector('.menu-toggle');if(!n||!b)return;const open=n.classList.toggle('open');b.setAttribute('aria-expanded',String(open));b.textContent=open?'×':'☰'}
