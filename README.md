@@ -90,3 +90,8 @@ A second migration, `supabase/migrations/20261024_classroom_governance_and_mater
 - Student material listings and storage access are restricted by row-level security to approved students in the matching course level during the scheduled live-class window. Materials are presented inside the classroom, and the tutor can present audio/video to participants.
 
 The migration must be applied to Supabase as well as committed to GitHub. Test with separate student, approved tutor, pending tutor, and registrar accounts before production use. Existing RLS policies and schema names can differ; do not apply blindly to production.
+
+
+### Registrar class creation and individual student enrolment
+
+Run `supabase/migrations/20261024_registrar_class_creation_and_student_enrolment.sql` in the Supabase SQL Editor after the classroom governance migration. It adds registrar-only class creation, per-class student enrolments, class roster management, and a student timetable limited to enrolled classes. The migration also adds the tutor class-insert policy to address tutor scheduling failures caused by row-level security. Students must have active approved access before the registrar can enrol them. Review the migration against your live Supabase schema before applying.
