@@ -14,7 +14,7 @@
 (async()=>{if(!window.supabase||!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY){location.replace('school.html');return}const authClient=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);const {data:{user}}=await authClient.auth.getUser();if(!user){location.replace('school.html');return}const {data:profile}=await authClient.from('profiles').select('role,access_approved,access_expires_at').eq('id',user.id).maybeSingle();const staff=['tutor','teacher','registrar','admin'].includes(profile?.role);if(!staff&&(!profile||!profile.access_approved||!profile.access_expires_at||new Date(profile.access_expires_at)<=new Date())){location.replace('dashboard.html');return}})();
 </script></head>
 <body class="classroom-page">
-<div class="utility-bar"><div class="container utility-inner"><span>Sprachenschule</span><div><a href="school.html">Login</a><span aria-hidden="true">·</span><a href="shop.html">Library</a></div></div></div><header class="site-header"><div class="container"><div class="nav-wrap">
+<div class="utility-bar"><div class="container utility-inner"><span aria-hidden="true"></span><div><a href="school.html">Login</a><span aria-hidden="true">·</span><a href="shop.html">Library</a></div></div></div><header class="site-header"><div class="container"><div class="nav-wrap">
 <a class="brand" href="index.html"><img src="logo.png" alt="Sprachenschule logo"><span class="brand-name">Sprachenschule<small>Language · Culture · Opportunity</small></span></a>
 <button class="menu-toggle" aria-label="Open navigation" aria-expanded="false" onclick="toggleMenu()">☰</button>
 <nav class="primary-nav" id="primaryNav" aria-label="Main navigation">

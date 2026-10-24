@@ -16,7 +16,7 @@
 (async()=>{if(!window.supabase||!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY){location.replace('school.html');return}const authClient=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);const {data:{user}}=await authClient.auth.getUser();if(!user){location.replace('school.html');return}const {data:profile}=await authClient.from('profiles').select('role,access_approved,access_expires_at').eq('id',user.id).maybeSingle();const staff=['tutor','teacher','registrar','admin'].includes(profile?.role);if(staff){location.replace('teacher.html');return}if(!profile){location.replace('school.html');return}if(!profile.access_approved||!profile.access_expires_at||new Date(profile.access_expires_at)<=new Date()){location.replace('dashboard.html');return}})();
 </script></head>
 <body>
-<div class="utility-bar"><div class="container utility-inner"><span>Sprachenschule</span><div><a href="school.html">Login</a><span aria-hidden="true">·</span><a href="shop.html">Library</a></div></div></div><header class="site-header"><div class="container"><div class="nav-wrap">
+<div class="utility-bar"><div class="container utility-inner"><span aria-hidden="true"></span><div><a href="school.html">Login</a><span aria-hidden="true">·</span><a href="shop.html">Library</a></div></div></div><header class="site-header"><div class="container"><div class="nav-wrap">
 <a class="brand" href="index.html"><img src="logo.png" alt="Sprachenschule logo"><span class="brand-name">Sprachenschule<small>Language · Culture · Opportunity</small></span></a>
 <button class="menu-toggle" aria-label="Open navigation" aria-expanded="false" onclick="toggleMenu()">☰</button>
 <nav class="primary-nav" id="primaryNav" aria-label="Main navigation">
@@ -24,8 +24,6 @@
 <a href="blog.html">Blog</a>
 <div class="nav-group"><button type="button">Learn</button><div class="dropdown"><a href="courses.html">All courses</a><a href="courses.html#german">German A1–B2</a><a href="courses.html#other-languages">Other languages</a><a href="learning-method.html">How learning works</a></div></div>
 <div class="nav-group"><button type="button">Explore</button><div class="dropdown"><a href="about.html">About the school</a><a href="germany-pathways.html">Germany pathways</a><a href="faq.html">Frequently asked questions</a></div></div>
-<a href="school.html">Login</a>
-<a href="shop.html">Library</a>
 <a href="admissions.html">Admissions</a>
 <a href="contact.html">Contact</a>
 </nav><div class="nav-actions"><form class="site-search" action="search.html" method="get" role="search"><input type="search" name="q" placeholder="Search" aria-label="Search the website"><button type="submit" aria-label="Submit search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg></button></form><a class="btn btn-primary nav-enquire" href="admissions.html">Enquire</a></div>
