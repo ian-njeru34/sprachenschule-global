@@ -149,16 +149,12 @@ loginForm.addEventListener('submit',async event=>{
     if(error) throw new Error(error.message);
     const authorised=await verifyRegistrar(data.user);
     if(!authorised){await sb.auth.signOut({scope:'local'});throw new Error('This account is not authorised as a registrar yet. In Supabase SQL Editor, add its Auth user UUID to public.registrars and set its profile role to registrar.');}
-    const sid=crypto.randomUUID();
-    const claim=await sb.rpc('acquire_student_session',{p_session_id:sid});
-    if(claim.error||claim.data!==true){const takeover=await sb.rpc('force_acquire_student_session',{p_session_id:sid});if(takeover.error||takeover.data!==true)throw new Error('Automatic device switch failed. Ask the administrator to apply the latest device-session SQL migration. '+(takeover.error?.message||claim.error?.message||''));}
-    localStorage.setItem('ssg_session_id',sid);
     showDashboard(data.user.email||email);await Promise.all([loadRegistrarCounts(),loadStudents(),loadTutors(),loadAssignments(),loadMaterialsModeration()]);
   }catch(error){showLoginMessage(error.message||'Sign-in failed.');}
   finally{submit.disabled=false;submit.textContent='Sign in as registrar';}
 });
 document.getElementById('toggleRegistrarPassword').addEventListener('click',()=>{const input=document.getElementById('registrarPassword');const show=input.type==='password';input.type=show?'text':'password';document.getElementById('toggleRegistrarPassword').textContent=show?'Hide':'Show';});
-document.getElementById('registrarSignOut').addEventListener('click',async()=>{const sid=localStorage.getItem('ssg_session_id');if(sid)await sb.rpc('release_student_session',{p_session_id:sid});localStorage.removeItem('ssg_session_id');await sb.auth.signOut({scope:'local'});showLogin();loginForm.reset();clearLoginMessage();});
+document.getElementById('registrarSignOut').addEventListener('click',async()=>{await sb.auth.signOut({scope:'local'});showLogin();loginForm.reset();clearLoginMessage();});
 (async()=>{const {data}=await sb.auth.getSession();if(!data.session)return;try{const user=data.session.user;if(await verifyRegistrar(user)){showDashboard(user.email||'');await Promise.all([loadRegistrarCounts(),loadStudents(),loadTutors(),loadAssignments(),loadMaterialsModeration()]);}else{await sb.auth.signOut({scope:'local'});showLogin();showLoginMessage('Your current account is not authorised as a registrar. Sign in with the registrar account.');}}catch(error){showLogin();showLoginMessage(error.message||'Could not verify registrar access.');}})();
 document.getElementById('year').textContent=new Date().getFullYear();
 </script><script>

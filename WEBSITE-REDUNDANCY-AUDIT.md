@@ -18,6 +18,6 @@
 ## Deployment checks still required
 - Confirm the Supabase `profiles` role values used for tutors (legacy `teacher` is accepted in the UI for compatibility).
 - Confirm the existing database trigger creates a student profile and stores course level from signup metadata. The frontend cannot safely create privileged staff roles.
-- Confirm the `acquire_student_session` RPC and related schema are deployed.
+- Multi-device sign-in is enabled in the frontend; no device-session lease RPC is required.
 - Confirm Library products have a working payment/fulfilment workflow; this visual/navigation pass does not create payment processing.
 - Run an authenticated/unauthenticated smoke test after deployment and verify RLS policies on profiles, scheduled classes, materials and storage.
