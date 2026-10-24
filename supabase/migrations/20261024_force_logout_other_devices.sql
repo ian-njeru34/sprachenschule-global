@@ -73,13 +73,18 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, auth
 AS $$
+DECLARE uid uuid := auth.uid();
 BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Sign in required'; END IF;
+  IF uid IS NULL THEN RAISE EXCEPTION 'Sign in required'; END IF;
   IF p_session_id IS NULL THEN RAISE EXCEPTION 'Session ID required'; END IF;
-  -- The authenticated user can replace only their own session record.
-  DELETE FROM public.account_device_sessions WHERE user_id = auth.uid();
+
+  -- Atomically replace only this user's active device lease. Avoid DELETE+INSERT
+  -- races that can leave the new device without a lease.
   INSERT INTO public.account_device_sessions(user_id, session_id, last_seen_at)
-  VALUES (auth.uid(), p_session_id, now());
+  VALUES (uid, p_session_id, now())
+  ON CONFLICT (user_id) DO UPDATE
+    SET session_id = EXCLUDED.session_id,
+        last_seen_at = EXCLUDED.last_seen_at;
   RETURN true;
 END;
 $$;
