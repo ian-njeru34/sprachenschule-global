@@ -154,7 +154,7 @@ loginForm.addEventListener('submit',async event=>{
   finally{submit.disabled=false;submit.textContent='Sign in as registrar';}
 });
 document.getElementById('toggleRegistrarPassword').addEventListener('click',()=>{const input=document.getElementById('registrarPassword');const show=input.type==='password';input.type=show?'text':'password';document.getElementById('toggleRegistrarPassword').textContent=show?'Hide':'Show';});
-document.getElementById('registrarSignOut').addEventListener('click',async()=>{await sb.auth.signOut();showLogin();loginForm.reset();clearLoginMessage();});
+document.getElementById('registrarSignOut').addEventListener('click',async()=>{const sid=localStorage.getItem('ssg_session_id');if(sid)await sb.rpc('release_student_session',{p_session_id:sid});localStorage.removeItem('ssg_session_id');await sb.auth.signOut();showLogin();loginForm.reset();clearLoginMessage();});
 (async()=>{const {data}=await sb.auth.getSession();if(!data.session)return;try{const user=data.session.user;if(await verifyRegistrar(user)){showDashboard(user.email||'');await Promise.all([loadRegistrarCounts(),loadStudents(),loadTutors(),loadAssignments(),loadMaterialsModeration()]);}else{await sb.auth.signOut();showLogin();showLoginMessage('Your current account is not authorised as a registrar. Sign in with the registrar account.');}}catch(error){showLogin();showLoginMessage(error.message||'Could not verify registrar access.');}})();
 document.getElementById('year').textContent=new Date().getFullYear();
 </script><script>
