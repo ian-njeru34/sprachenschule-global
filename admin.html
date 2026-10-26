@@ -122,9 +122,16 @@ document.getElementById('createClassForm').addEventListener('submit',async e=>{
  if(error){msg.textContent='Could not create class: '+error.message;return}msg.textContent='Class created. Now select it below to enrol individual students.';e.target.reset();await loadAssignments();const id=Array.isArray(data)?data[0]:data;if(id){document.getElementById('rosterClass').value=id;await loadClassRoster(id)}
 });
 async function loadMaterialsModeration(){
- const box=document.getElementById('materialsModeration');const {data,error}=await sb.from('class_materials').select('id,title,material_type,created_at,storage_path,class_id,deleted_at').is('deleted_at',null).order('created_at',{ascending:false}).limit(100);
- if(error){box.textContent='Could not load materials. '+error.message;return}if(!data?.length){box.innerHTML='<p class="muted">No uploaded materials.</p>';return}
- box.innerHTML='<div style="overflow-x:auto"><table class="table"><thead><tr><th>Title</th><th>Type</th><th>Uploaded</th><th>Action</th></tr></thead><tbody>'+data.map(m=>`<tr><td>${escapeHtml(m.title)}</td><td>${escapeHtml(m.material_type)}</td><td>${new Date(m.created_at).toLocaleString()}</td><td><button class="btn btn-outline" type="button" data-delete-material="${escapeHtml(m.id)}" data-path="${escapeHtml(m.storage_path)}">Delete material</button></td></tr>`).join('')+'</tbody></table></div>';
+ const box=document.getElementById('materialsModeration');
+ const {data,error}=await sb.from('class_materials').select('id,title,material_type,created_at,storage_path,class_id,deleted_at').is('deleted_at',null).order('created_at',{ascending:false}).limit(100);
+ if(error){box.textContent='Could not load materials. '+error.message;return}
+ if(!data?.length){box.innerHTML='<p class="muted">No uploaded materials.</p>';return}
+ // Resolve each material's assigned scheduled class so the registrar can verify where it belongs.
+ const classIds=[...new Set(data.map(m=>m.class_id).filter(Boolean))];
+ const {data:classes,classError}=await sb.from('scheduled_classes').select('id,class_title,class_level,starts_at,room_name').in('id',classIds);
+ const classMap=new Map((classes||[]).map(c=>[c.id,c]));
+ const classLabel=m=>{const c=classMap.get(m.class_id);return c?`${c.class_title||'Class'} — ${c.class_level||''} (${c.starts_at?new Date(c.starts_at).toLocaleString():'schedule unavailable'})${c.room_name?' · '+c.room_name:''}`:'Assigned class unavailable';};
+ box.innerHTML='<div style="overflow-x:auto"><table class="table"><thead><tr><th>Material</th><th>Assigned class</th><th>Type</th><th>Uploaded</th><th>Action</th></tr></thead><tbody>'+data.map(m=>`<tr><td>${escapeHtml(m.title)}</td><td>${escapeHtml(classLabel(m))}</td><td>${escapeHtml(m.material_type)}</td><td>${new Date(m.created_at).toLocaleString()}</td><td><button class="btn btn-outline" type="button" data-delete-material="${escapeHtml(m.id)}" data-path="${escapeHtml(m.storage_path)}">Delete material</button></td></tr>`).join('')+'</tbody></table></div>';
  box.querySelectorAll('[data-delete-material]').forEach(b=>b.addEventListener('click',async()=>{if(!confirm('Permanently delete this material?'))return;b.disabled=true;const path=b.dataset.path;const rm=await sb.storage.from('class-materials').remove([path]);if(rm.error){alert('File deletion failed: '+rm.error.message);b.disabled=false;return}const del=await sb.from('class_materials').delete().eq('id',b.dataset.deleteMaterial);if(del.error){alert('File removed but record deletion failed: '+del.error.message);return}await loadMaterialsModeration()}));
 }
 async function approveTutor(id,button){
