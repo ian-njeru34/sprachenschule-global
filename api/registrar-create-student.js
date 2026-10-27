@@ -29,12 +29,17 @@ module.exports = async function handler(req, res) {
   const email = String(body.email || '').trim().toLowerCase();
   const phone = String(body.phone || '').trim();
   const courseId = String(body.course_id || '').trim();
-  if (fullName.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !courseId) {
-    return res.status(400).json({ error: 'Enter a full name, valid email address, and course.' });
+  const cohortId = String(body.cohort_id || '').trim();
+  if (fullName.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !courseId || !cohortId) {
+    return res.status(400).json({ error: 'Enter a full name, valid email address, course, and cohort.' });
   }
 
-  const { data: course, error: courseError } = await admin.from('courses').select('id,title,is_active').eq('id', courseId).maybeSingle();
+  const [{ data: course, error: courseError }, { data: cohort, error: cohortError }] = await Promise.all([
+    admin.from('courses').select('id,title,is_active').eq('id', courseId).maybeSingle(),
+    admin.from('course_cohorts').select('id,course_id,name,code,status').eq('id', cohortId).maybeSingle()
+  ]);
   if (courseError || !course || !course.is_active) return res.status(400).json({ error: 'Choose an active course from the course catalogue.' });
+  if (cohortError || !cohort || cohort.course_id !== course.id || cohort.status !== 'active') return res.status(400).json({ error: 'Choose an active cohort belonging to the selected course.' });
 
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: fullName, phone, level: course.title, role: 'student', account_type: 'student', approval_status: 'pending' }
@@ -51,9 +56,9 @@ module.exports = async function handler(req, res) {
   if (profileError) return res.status(500).json({ error: 'Invitation sent, but profile setup failed: ' + profileError.message, invited: true });
 
   const { error: enrolError } = await admin.from('course_enrolments').upsert({
-    student_id: studentId, course_id: course.id, enrolled_by: actorId, status: 'pending'
-  }, { onConflict: 'course_id,student_id' });
+    student_id: studentId, course_id: course.id, cohort_id: cohort.id, enrolled_by: actorId, status: 'pending'
+  }, { onConflict: 'cohort_id,student_id' });
   if (enrolError) return res.status(500).json({ error: 'Student invited, but course enrolment could not be saved: ' + enrolError.message, invited: true });
 
-  return res.status(201).json({ ok: true, message: 'Student invitation sent. Course enrolment is pending access approval.', student_id: studentId, course: course.title });
+  return res.status(201).json({ ok: true, message: 'Student invitation sent. Cohort enrolment is pending access approval.', student_id: studentId, course: course.title, cohort: cohort.name, cohort_code: cohort.code });
 };
