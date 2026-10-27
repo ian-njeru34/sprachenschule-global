@@ -8,7 +8,7 @@
 - `api/registrar-create-student.js` securely verifies the signed-in registrar on the server, sends an invitation email, creates/updates the student profile and creates a pending course enrolment.
 - Added `supabase/migrations/20261028_course_catalogue_and_enrolments.sql`, an additive course catalogue and course-level enrolment foundation.
 - Added `supabase/migrations/20261029_course_cohorts.sql` to distinguish a course from its separate cohorts. Existing course classes and enrolments are backfilled into a per-course `General Cohort` to preserve records.
-- Registrar dashboard now supports creating cohorts, assigning new or existing students to a specific cohort, and scheduling each class against a cohort. Student and tutor dashboards display the assigned cohort. Class access synchronisation matches both course and cohort.
+- Registrar dashboard now supports creating cohorts, assigning new or existing students to a specific cohort, and scheduling each class against a cohort. Student and tutor dashboards display the assigned cohort. Class access synchronisation matches both course and cohort. The cohort code is entered manually by the registrar (for example `OCT_GA1`); the form uppercases it and accepts 2–30 letters, numbers, underscores or hyphens. Codes and names must be unique within their course.
 
 ## Before deploying
 1. Keep a copy of your currently deployed ZIP and export a Supabase database backup.
@@ -16,7 +16,7 @@
 3. Then review and run `supabase/migrations/20261029_course_cohorts.sql`. This is required for the new cohort controls. Do not run the cohort UI against the database before this migration succeeds.
 4. In Vercel, set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as server-side environment variables. Never expose the service-role key in `config.js` or browser code. `SUPABASE_URL` must match the public project URL.
 5. Confirm the `profiles`, `registrars`, `scheduled_classes`, and `class_enrolments` table names/columns match your live project. The migration backfills courses from `profiles.level` and `scheduled_classes.level`; it does not delete existing records.
-6. Test with one registrar, one approved tutor, and at least two test students before production. Create two cohorts under the same course, enrol each student into a different cohort, and schedule separate classes for both groups.
+6. Test with one registrar, one approved tutor, and at least two test students before production. Create two cohorts under the same course using codes such as `OCT_GA1` and `NOV_GA1`, enrol each student into a different cohort, and schedule separate classes for both groups. Confirm lowercase input is automatically converted to uppercase and duplicate codes are rejected for the same course.
 7. Deploy the revised site to a preview URL first. Confirm login, logout, tutor application, registrar student invitation, course enrolment, class assignment, classroom join, and material preview.
 
 ## Important limitations / next phase
