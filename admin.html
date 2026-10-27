@@ -20,6 +20,7 @@
 <div class="card hidden" id="registrarDashboardCard">
 <div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap"><div><h2>Registrar overview</h2><p class="muted" id="registrarSignedInAs"></p></div><button class="btn btn-outline" id="registrarSignOut" type="button">Sign out</button></div>
 <div id="registrarCounts" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:18px 0" aria-live="polite"><div class="card">Loading account totals…</div></div>
+<hr><h2>Create student account</h2><p class="muted">The registrar creates the account, assigns an official course and sends an invitation email. Learning access remains pending until the usual approval process is completed.</p><form id="createStudentForm" class="form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px"><div class="field"><label for="newStudentName">Full name</label><input id="newStudentName" required maxlength="120"></div><div class="field"><label for="newStudentEmail">Email address</label><input id="newStudentEmail" type="email" required></div><div class="field"><label for="newStudentPhone">Phone</label><input id="newStudentPhone" maxlength="40"></div><div class="field"><label for="newStudentCourse">Official course</label><select id="newStudentCourse" required><option value="">Loading course catalogue…</option></select></div><div><button class="btn btn-gold" type="submit">Create and invite student</button></div><p id="createStudentMessage" class="notice hidden" role="status" style="grid-column:1/-1"></p></form>
 <hr><h2>Pending student approvals</h2><div id="students" aria-live="polite">Loading pending students…</div>
 <hr><h2>Pending tutor applications</h2><p class="muted">Tutor accounts remain restricted until approved here.</p><div id="tutors" aria-live="polite">Loading pending tutors…</div>
 <hr><h2>Create a class</h2><p class="muted">Create a lesson and optionally assign an approved tutor. You can enrol individual approved students below.</p>
@@ -114,6 +115,19 @@ async function loadClassRoster(classId){
  box.innerHTML='<div style="overflow-x:auto"><table class="table"><thead><tr><th>Enrolled</th><th>Student</th><th>Email</th><th>Level</th></tr></thead><tbody>'+data.map(st=>`<tr><td><input type="checkbox" data-student-enrol="${escapeHtml(st.student_id)}" ${st.enrolled?'checked':''} aria-label="Enrol ${escapeHtml(st.student_name)}"></td><td>${escapeHtml(st.student_name)}</td><td>${escapeHtml(st.student_email||'')}</td><td>${escapeHtml(st.student_level||'—')}</td></tr>`).join('')+'</tbody></table></div><p id="rosterMessage" class="muted" role="status">Changes save automatically.</p>';
  box.querySelectorAll('[data-student-enrol]').forEach(ch=>ch.addEventListener('change',async()=>{ch.disabled=true;const msg=document.getElementById('rosterMessage');msg.textContent='Saving enrolment…';const {error}=await sb.rpc('registrar_set_class_enrolment',{p_class_id:classId,p_student_id:ch.dataset.studentEnrol,p_enrolled:ch.checked});if(error){ch.checked=!ch.checked;msg.textContent='Could not save enrolment: '+error.message;ch.disabled=false;return}msg.textContent='Enrolment updated.';ch.disabled=false}));
 }
+async function loadCourseCatalogue(){
+ const select=document.getElementById('newStudentCourse');
+ const {data,error}=await sb.from('courses').select('id,title').eq('is_active',true).order('language').order('cefr_level');
+ if(error){select.innerHTML='<option value="">Course catalogue unavailable</option>';return}
+ select.innerHTML='<option value="">Choose a course</option>'+(data||[]).map(c=>`<option value="${escapeHtml(c.id)}">${escapeHtml(c.title)}</option>`).join('');
+}
+document.getElementById('createStudentForm').addEventListener('submit',async e=>{
+ e.preventDefault();const msg=document.getElementById('createStudentMessage');msg.classList.remove('hidden');msg.textContent='Creating student invitation…';
+ const {data:{session}}=await sb.auth.getSession();if(!session){msg.textContent='Your session expired. Please sign in again.';return}
+ const payload={full_name:document.getElementById('newStudentName').value.trim(),email:document.getElementById('newStudentEmail').value.trim(),phone:document.getElementById('newStudentPhone').value.trim(),course_id:document.getElementById('newStudentCourse').value};
+ try{const response=await fetch('/api/registrar-create-student',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify(payload)});const result=await response.json();if(!response.ok){msg.textContent=result.error||'Could not create student account.';return}msg.textContent=result.message||'Student invitation sent.';e.target.reset();await Promise.all([loadStudents(),loadRegistrarCounts()]);}
+ catch(err){msg.textContent='Could not contact the account service. Check deployment logs and server environment variables.';}
+});
 document.getElementById('rosterClass').addEventListener('change',e=>loadClassRoster(e.target.value));
 document.getElementById('createClassForm').addEventListener('submit',async e=>{
  e.preventDefault();const msg=document.getElementById('createClassMessage');msg.classList.remove('hidden');msg.textContent='Creating class…';
@@ -159,13 +173,13 @@ loginForm.addEventListener('submit',async event=>{
     if(error) throw new Error(error.message);
     const authorised=await verifyRegistrar(data.user);
     if(!authorised){await sb.auth.signOut({scope:'local'});throw new Error('This account is not authorised as a registrar yet. In Supabase SQL Editor, add its Auth user UUID to public.registrars and set its profile role to registrar.');}
-    showDashboard(data.user.email||email);await Promise.all([loadRegistrarCounts(),loadStudents(),loadTutors(),loadAssignments(),loadMaterialsModeration()]);
+    showDashboard(data.user.email||email);await Promise.all([loadRegistrarCounts(),loadStudents(),loadTutors(),loadAssignments(),loadMaterialsModeration(),loadCourseCatalogue()]);
   }catch(error){showLoginMessage(error.message||'Sign-in failed.');}
   finally{submit.disabled=false;submit.textContent='Sign in as registrar';}
 });
 document.getElementById('toggleRegistrarPassword').addEventListener('click',()=>{const input=document.getElementById('registrarPassword');const show=input.type==='password';input.type=show?'text':'password';document.getElementById('toggleRegistrarPassword').textContent=show?'Hide':'Show';});
 document.getElementById('registrarSignOut').addEventListener('click',async()=>{await sb.auth.signOut({scope:'local'});showLogin();loginForm.reset();clearLoginMessage();});
-(async()=>{const {data}=await sb.auth.getSession();if(!data.session)return;try{const user=data.session.user;if(await verifyRegistrar(user)){showDashboard(user.email||'');await Promise.all([loadRegistrarCounts(),loadStudents(),loadTutors(),loadAssignments(),loadMaterialsModeration()]);}else{await sb.auth.signOut({scope:'local'});showLogin();showLoginMessage('Your current account is not authorised as a registrar. Sign in with the registrar account.');}}catch(error){showLogin();showLoginMessage(error.message||'Could not verify registrar access.');}})();
+(async()=>{const {data}=await sb.auth.getSession();if(!data.session)return;try{const user=data.session.user;if(await verifyRegistrar(user)){showDashboard(user.email||'');await Promise.all([loadRegistrarCounts(),loadStudents(),loadTutors(),loadAssignments(),loadMaterialsModeration(),loadCourseCatalogue()]);}else{await sb.auth.signOut({scope:'local'});showLogin();showLoginMessage('Your current account is not authorised as a registrar. Sign in with the registrar account.');}}catch(error){showLogin();showLoginMessage(error.message||'Could not verify registrar access.');}})();
 // Refresh the live indicator and assignment labels periodically without interrupting edits.
 setInterval(()=>{const active=document.activeElement;const editing=active&&active.closest&&active.closest('.assignment-row');if(!editing&&!dashboardCard.classList.contains('hidden'))loadAssignments().catch(()=>{});},30000);
 document.getElementById('year').textContent=new Date().getFullYear();
