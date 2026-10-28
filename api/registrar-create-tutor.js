@@ -34,10 +34,12 @@ module.exports = async function handler(req, res) {
   const fullName = String(body.full_name || '').trim();
   const email = String(body.email || '').trim().toLowerCase();
   const phone = String(body.phone || '').trim();
-  const languageLevel = String(body.language_level || '').trim();
   const allowedLevels = /^(German|French|English|Spanish|Swahili) (A1|A2|B1|B2|C1|C2)$/;
-  if (fullName.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !allowedLevels.test(languageLevel)) {
-    return res.status(400).json({ error: 'Enter a full name, valid email address, and a supported language / CEFR level.' });
+  const submittedLanguages = Array.isArray(body.languages) ? body.languages : (body.language_level ? [body.language_level] : []);
+  const languages = [...new Set(submittedLanguages.map(value => String(value || '').trim()).filter(value => allowedLevels.test(value)))];
+  const languageLevel = languages.join(', ');
+  if (fullName.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || languages.length === 0 || languages.length !== submittedLanguages.length) {
+    return res.status(400).json({ error: 'Enter a full name, valid email address, and select at least one supported language / CEFR level.' });
   }
 
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {

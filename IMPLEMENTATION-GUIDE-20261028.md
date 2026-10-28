@@ -69,3 +69,12 @@ The second migration separates tutor applications from the student approval queu
 The `Perfekt` class scheduled at 3:10 AM on 28 October 2026 was intentionally created for testing. Do not change its time as part of this fix.
 
 After migration and deployment, test: (a) the approved-student card expands and lists students; (b) the known tutor application no longer appears in pending students and appears under pending tutors; (c) registrar-created tutor invitations appear as pending applications; and (d) the roster loads without the query result-type error.
+
+
+## Expandable registrar lists and multi-language tutors (31 October 2026)
+
+This revision makes both **Approved students** and **Approved tutors** expandable summary cards. The approved tutor list shows tutor name, email, phone, and all recorded language/CEFR combinations. The course cohort table is inside a closed-by-default **View existing course cohorts** disclosure so the long General Cohort list stays hidden until requested.
+
+The Create tutor account form now lets the registrar select multiple language/CEFR combinations (for example, German C1 and English B2). For compatibility with the current schema, the selected combinations are stored as a comma-separated string in `tutor_applications.language_level` and the profile/Auth `level` metadata. No existing tutor records are deleted.
+
+Before deploying this revision, run `supabase/migrations/20261031_registrar_approved_tutor_details.sql` in Supabase SQL Editor. It creates the registrar-authorized, read-only RPC used to populate the expandable approved-tutor list. Then deploy the complete ZIP to a Vercel Preview deployment first. Test opening and closing both approved-account cards, expanding/collapsing the cohort list, and creating a tutor with two or more language/CEFR selections.
