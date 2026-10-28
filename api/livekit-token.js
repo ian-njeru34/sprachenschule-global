@@ -97,7 +97,7 @@ module.exports = async function handler(req, res) {
       identity,
       name: displayName,
       ttl: '2h',
-      metadata: JSON.stringify({ role: isTeacher ? 'teacher' : 'student' })
+      metadata: JSON.stringify({   role: isTeacher ? 'teacher' : 'student',   classId: scheduledClass.id })
     });
     token.addGrant({
       roomJoin: true,
@@ -107,7 +107,7 @@ module.exports = async function handler(req, res) {
       canPublishData: true,
     });
     const jwt = await token.toJwt();
-    return res.status(200).json({ url: LIVEKIT_URL, token: jwt, role: isTeacher ? 'teacher' : 'student' });
+    return res.status(200).json({   url: LIVEKIT_URL,   token: jwt,   role: isTeacher ? 'teacher' : 'student',   classId: scheduledClass.id,   classTitle: scheduledClass.title });
   } catch (err) {
     console.error('Classroom token error:', err && err.message);
     return res.status(500).json({ error: 'Could not prepare a classroom connection. Please try again.' });
