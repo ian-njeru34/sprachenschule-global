@@ -36,3 +36,36 @@
 - Registrar scheduling and roster controls still work.
 - Verify a class roster only offers students actively enrolled in that cohort.
 - LiveKit join and multi-device sign-in remain unchanged.
+
+## Fix for registrar student-list and class-roster errors (30 October 2026)
+
+The registrar dashboard may show `Student list unavailable` or `structure of query does not match function result type` if the database returns `varchar` values for functions declared to return `text`. The additive migration below explicitly casts returned values to the declared types:
+
+`supabase/migrations/20261030_fix_registrar_roster_functions.sql`
+
+Apply this migration in Supabase SQL Editor after the course catalogue/enrolment migration and the cohort migration have both been applied. It replaces only the two registrar RPC functions and does not delete student, cohort, class, or enrolment records.
+
+After applying it, refresh the registrar dashboard and verify:
+1. The approved-student selector loads.
+2. The class roster loads for the `Perfekt` class.
+3. Only students actively enrolled in that class's course and cohort are offered in the roster.
+4. A student in `OCT_GA1` is not offered for a class in a different cohort.
+
+If Supabase reports an error while applying the migration, stop and capture the full error text before making further changes.
+
+
+## Registrar follow-up changes (31 October 2026)
+
+The registrar dashboard now has an expandable **Approved students** card that loads approved student records on demand. It also includes **Create tutor account**, which sends an invitation and creates a pending tutor application; the tutor remains blocked from staff tools until the registrar approves them.
+
+The API endpoint is `api/registrar-create-tutor.js`. It requires `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in the Vercel server environment. Never expose the service-role key in browser code.
+
+Apply these SQL migrations in order after the existing course and cohort migrations:
+1. `supabase/migrations/20261030_fix_registrar_roster_functions.sql`
+2. `supabase/migrations/20261031_registrar_tutor_management_and_queue_cleanup.sql`
+
+The second migration separates tutor applications from the student approval queue, repairs the known misrouted `sprachenschuleglobal@gmail.com` tutor application if that Auth user exists, and provides the `registrar_pending_students_clean()` RPC used by the dashboard. Review the email-specific repair statement before applying if that account is no longer the intended tutor applicant.
+
+The `Perfekt` class scheduled at 3:10 AM on 28 October 2026 was intentionally created for testing. Do not change its time as part of this fix.
+
+After migration and deployment, test: (a) the approved-student card expands and lists students; (b) the known tutor application no longer appears in pending students and appears under pending tutors; (c) registrar-created tutor invitations appear as pending applications; and (d) the roster loads without the query result-type error.
