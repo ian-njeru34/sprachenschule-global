@@ -16,6 +16,7 @@
 <form id="registrarLoginForm" class="form"><div class="field"><label for="registrarEmail">Email address</label><input id="registrarEmail" type="email" autocomplete="username" required></div>
 <div class="field"><label for="registrarPassword">Password</label><div class="password-wrap"><input id="registrarPassword" type="password" autocomplete="current-password" required><button type="button" class="password-toggle" id="toggleRegistrarPassword">Show</button></div></div>
 <button class="btn btn-navy" type="submit">Sign in as registrar</button><p id="registrarLoginMsg" class="notice hidden" role="status"></p></form>
+<p class="form-note"><a href="reset-password.html">Forgot your password?</a></p>
 <p class="form-note">If you have not yet created a Supabase Auth user or added it to the registrars table, sign-in alone will not grant registrar access.</p></div>
 <div class="card hidden" id="registrarDashboardCard">
 <div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap"><div><h2>Registrar overview</h2><p class="muted" id="registrarSignedInAs"></p></div><button class="btn btn-outline" id="registrarSignOut" type="button">Sign out</button></div>
