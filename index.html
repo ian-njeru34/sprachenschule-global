@@ -1,5 +1,21 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sprachenschule - Learn Global Languages</title><meta name="description" content="Explore German A1–B2, French, English, Spanish and Swahili language learning with Sprachenschule in Kenya. Learn for study, work, travel and everyday connection."><meta name="theme-color" content="#173d35"><link rel="icon" type="image/png" href="logo.png"><link rel="apple-touch-icon" href="logo.png"><link rel="stylesheet" href="styles.css"></head><body>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sprachenschule - Learn Global Languages</title><meta name="description" content="Explore German A1–B2, French, English, Spanish and Swahili language learning with Sprachenschule in Kenya. Learn for study, work, travel and everyday connection."><meta name="theme-color" content="#173d35"><link rel="icon" type="image/png" href="logo.png"><link rel="apple-touch-icon" href="logo.png"><link rel="stylesheet" href="styles.css">
+<!-- Route Supabase recovery callbacks to the dedicated password form before the homepage renders. -->
+<script>
+(function () {
+  var hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  var query = new URLSearchParams(window.location.search);
+  var isRecovery = hash.get('type') === 'recovery' ||
+    (hash.has('access_token') && hash.has('refresh_token') && !['signup','invite','magiclink','email_change'].includes(hash.get('type')));
+  var isRecoveryError = hash.has('error_code') || hash.has('error_description');
+  var isPkceCallback = query.has('code');
+  if (isRecovery || isRecoveryError || isPkceCallback) {
+    window.location.replace('/reset-password.html' + window.location.search + window.location.hash);
+  }
+})();
+</script>
+
+</head><body>
 
 <div class="utility-bar"><div class="container utility-inner"><span aria-hidden="true"></span><div><a href="school.html">Login</a><span aria-hidden="true">·</span><a href="shop.html">Library</a></div></div></div><header class="site-header"><div class="container"><div class="nav-wrap">
 <a class="brand" href="index.html"><img src="logo.png" alt="Sprachenschule logo"><span class="brand-name">Sprachenschule<small>Language · Culture · Opportunity</small></span></a>
