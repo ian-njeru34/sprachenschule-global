@@ -43,6 +43,8 @@ module.exports = async function handler(req, res) {
   }
 
   const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+    // Send tutor invitations to the password setup page, not the public homepage.
+    redirectTo: 'https://www.sprachenschule.co.ke/set-password.html',
     data: {
       full_name: fullName,
       phone,
