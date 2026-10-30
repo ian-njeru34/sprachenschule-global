@@ -31,17 +31,32 @@
 .video-tile video{width:100%;height:100%;min-height:190px;object-fit:cover;position:absolute;inset:0}
 
 /* Large presentation area with a smaller participant column */
-.video-grid:has(.screen-share-tile){grid-template-columns:minmax(0,4fr) minmax(130px,1fr);grid-template-rows:minmax(0,1fr);align-content:stretch}
-.video-grid:has(.screen-share-tile) .screen-share-tile{grid-column:1;grid-row:1 / span 20;min-height:420px;order:-1}
+.video-grid:has(.screen-share-tile){grid-template-columns:minmax(0,4fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr);align-content:stretch;min-height:520px}
+.video-grid:has(.screen-share-tile) .screen-share-tile{grid-column:1;grid-row:1 / span 20;min-height:520px;height:100%;order:-1}
 .video-grid:has(.screen-share-tile) .screen-share-tile video{object-fit:contain;min-height:420px;background:#080d0c}
-.video-grid:has(.screen-share-tile) .material-presentation{grid-column:1;grid-row:1 / span 20;min-height:420px;order:-1;background:#fff;color:#17221d;border-radius:12px;overflow:auto}
+.video-grid:has(.screen-share-tile) .material-presentation{grid-column:1;grid-row:1 / span 20;min-height:520px;height:100%;order:-1;background:#fff;color:#17221d;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
 .material-presentation iframe{display:block;width:100%;height:100%;min-height:420px;border:0;background:#fff;position:relative;inset:auto}
+.presentation-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;background:#eef2ee;color:#17221d;border-bottom:1px solid #dce4dc;flex:0 0 auto}
+.presentation-toolbar button{border:1px solid #cbd6cc;background:#fff;color:#173d35;border-radius:8px;padding:6px 10px;font-weight:700;cursor:pointer}
+.presentation-toolbar button:disabled{opacity:.45;cursor:not-allowed}
+.presentation-toolbar .media-progress{flex:1;min-width:90px;accent-color:#176b50}
+.presentation-toolbar .media-time{font-size:.78rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.presentation-content{position:relative;flex:1;min-height:0;height:auto;overflow:auto;background:#111}
+.presentation-content .presented-media{display:block;width:100%;height:100%;min-height:0;max-height:none;object-fit:contain;background:#080d0c}
+.pdf-scroll{height:100%;width:100%;overflow:auto;background:#333;padding:14px;overscroll-behavior:contain}
+.pdf-pages{display:flex;flex-direction:column;align-items:center;gap:14px;min-width:max-content}
+.pdf-page{background:#fff;box-shadow:0 2px 14px #0007;max-width:none}
+.pdf-page canvas{display:block;max-width:none}
+.pdf-loading{color:white;text-align:center;padding:24px}
+.material-presentation .presentation-heading{padding:8px 12px;margin:0;background:#173d35;color:white;font-weight:800;flex:0 0 auto}
+.material-presentation .presentation-content{height:auto;min-height:0}
 .material-presentation video.presented-media{position:relative;inset:auto;min-height:370px;width:100%;height:100%;object-fit:contain}
 .material-presentation audio.presented-media{position:relative;inset:auto;display:block;width:92%;max-width:700px;margin:50px auto}
-.material-presentation .presented-media{width:100%;height:100%;min-height:420px;max-height:70vh;object-fit:contain;background:#080d0c}
-.material-presentation .presentation-heading{padding:8px 12px;margin:0;background:#173d35;color:white;font-weight:800}
-.material-presentation .presentation-content{height:calc(100% - 42px);min-height:370px}
-.video-grid:has(.screen-share-tile) .video-tile:not(.screen-share-tile){grid-column:2;min-height:100px;max-height:180px}
+.material-presentation .presented-media{width:100%;height:100%;min-height:0;max-height:none;object-fit:contain;background:#080d0c}
+.video-zoom-wrap{display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-width:100%;min-height:100%;background:#080d0c}
+.video-zoom-wrap .presented-media{min-height:0!important;max-height:none!important;max-width:none!important;flex:0 0 auto}
+
+.video-grid:has(.screen-share-tile) .video-tile:not(.screen-share-tile){grid-column:2;min-height:100px;max-height:180px;height:180px}
 .video-grid:has(.screen-share-tile) .video-tile:not(.screen-share-tile) video{min-height:100px}
 
 .video-tile .tile-name{position:absolute;left:10px;bottom:10px;padding:5px 8px;background:#0009;border-radius:7px;font-size:.8rem;z-index:2}
@@ -73,11 +88,11 @@
  .video-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
  .video-tile{min-height:160px}
  .video-tile video{min-height:160px}
- .video-grid:has(.screen-share-tile){grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(240px,1fr) auto}
- .video-grid:has(.screen-share-tile) .screen-share-tile{grid-column:1;grid-row:1;min-height:260px}
+ .video-grid:has(.screen-share-tile){grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(260px,1fr) auto;min-height:0}
+ .video-grid:has(.screen-share-tile) .screen-share-tile{grid-column:1;grid-row:1;min-height:260px;height:60vh}
  .video-grid:has(.screen-share-tile) .screen-share-tile video{min-height:260px}
- .video-grid:has(.screen-share-tile) .material-presentation{grid-column:1;grid-row:1;min-height:260px}
- .video-grid:has(.screen-share-tile) .video-tile:not(.screen-share-tile){grid-column:auto;min-height:120px;max-height:none}
+ .video-grid:has(.screen-share-tile) .material-presentation{grid-column:1;grid-row:1;min-height:260px;height:60vh}
+ .video-grid:has(.screen-share-tile) .video-tile:not(.screen-share-tile){grid-column:auto;min-height:120px;max-height:none;height:120px}
  .video-grid:has(.screen-share-tile) .video-tile:not(.screen-share-tile) video{min-height:120px}
 }
 </style>
@@ -207,6 +222,7 @@
     <button class="control-btn" id="micBtn" type="button" aria-label="Mute microphone" title="Mute microphone"><span class="control-icon" aria-hidden="true">🎙</span></button>
     <button class="control-btn" id="camBtn" type="button" aria-label="Turn camera off" title="Turn camera off"><span class="control-icon" aria-hidden="true">📹</span></button>
     <button class="control-btn" id="shareBtn" type="button" aria-label="Share screen" title="Share screen"><span class="control-icon" aria-hidden="true">▣</span></button>
+    <button class="control-btn hidden" id="muteAllBtn" type="button" aria-label="Mute all students" title="Mute all students"><span class="control-icon" aria-hidden="true">🔇</span></button>
     <button class="control-btn danger" id="leaveBtn" type="button" aria-label="Leave classroom" title="Leave classroom"><span class="control-icon" aria-hidden="true">☎</span></button>
    </div>
   </div>
@@ -265,6 +281,14 @@ let materialRefreshTimer=null;
 let micOn=true;
 let camOn=true;
 let sharing=false;
+let studentsMuted=false;
+let pdfDocument=null;
+let pdfScale=1;
+let mediaZoom=1;
+let pdfCurrentPage=1;
+let pdfRenderToken=0;
+let pdfSyncTimer=null;
+let pdfJsPromise=null;
 
 if(
  window.SUPABASE_URL&&
@@ -486,119 +510,186 @@ async function loadClassMaterials(){
  * private storage bucket. This function checks the material's
  * class ID again before displaying it.
  */
-async function displayMaterial(id,leader){
+async function getPdfJs(){
+ if(!pdfJsPromise){
+   pdfJsPromise=import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs').then(pdf=>{
+     pdf.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+     return pdf;
+   });
+ }
+ return pdfJsPromise;
+}
+
+function addPresentationToolbar(content,kind,leader,media=null){
+ const toolbar=document.createElement('div');
+ toolbar.className='presentation-toolbar';
+ if(kind==='audio'||kind==='video'){
+   const play=document.createElement('button');
+   play.type='button';play.textContent='▶ Play';play.setAttribute('aria-label','Play media');
+   play.addEventListener('click',async()=>{
+     if(media.paused){try{await media.play();}catch{setStatus('Press play again to allow media playback in this browser.','error');}}
+     else media.pause();
+   });
+   const progress=document.createElement('input');
+   progress.type='range';progress.min='0';progress.max='1000';progress.value='0';progress.className='media-progress';progress.setAttribute('aria-label','Playback position');
+   progress.addEventListener('input',()=>{if(Number.isFinite(media.duration)&&media.duration>0)media.currentTime=(Number(progress.value)/1000)*media.duration;});
+   const time=document.createElement('span');time.className='media-time';time.textContent='0:00 / 0:00';
+   const sync=()=>{
+     play.textContent=media.paused?'▶ Play':'❚❚ Pause';
+     play.setAttribute('aria-label',media.paused?'Play media':'Pause media');
+     if(Number.isFinite(media.duration)&&media.duration>0)progress.value=String(Math.round(media.currentTime/media.duration*1000));
+     time.textContent=formatTime(media.currentTime)+' / '+formatTime(media.duration);
+   };
+   media.addEventListener('play',sync);media.addEventListener('pause',sync);media.addEventListener('timeupdate',sync);media.addEventListener('loadedmetadata',sync);
+   if(leader){
+     media.addEventListener('play',()=>sendClassEvent({type:'material-control',id:activeMaterialId,action:'play',time:media.currentTime}));
+     media.addEventListener('pause',()=>sendClassEvent({type:'material-control',id:activeMaterialId,action:'pause',time:media.currentTime}));
+     media.addEventListener('seeked',()=>sendClassEvent({type:'material-control',id:activeMaterialId,action:'seek',time:media.currentTime}));
+   }
+   toolbar.append(play,progress,time);
+   if(kind==='video'){
+     const wrap=media.parentElement;
+     const zoomLabel=document.createElement('span');zoomLabel.className='media-time';zoomLabel.textContent='100%';
+     const zoomOut=document.createElement('button');zoomOut.type='button';zoomOut.textContent='−';zoomOut.title='Zoom video out';
+     const zoomIn=document.createElement('button');zoomIn.type='button';zoomIn.textContent='+';zoomIn.title='Zoom video in';
+     const fit=document.createElement('button');fit.type='button';fit.textContent='Fit';fit.title='Fit video to presentation area';
+     const applyZoom=value=>{mediaZoom=Math.max(.75,Math.min(2.25,value));wrap.style.width=(mediaZoom*100)+'%';wrap.style.height=(mediaZoom*100)+'%';zoomLabel.textContent=Math.round(mediaZoom*100)+'%';};
+     zoomOut.addEventListener('click',()=>applyZoom(mediaZoom-.15));zoomIn.addEventListener('click',()=>applyZoom(mediaZoom+.15));fit.addEventListener('click',()=>applyZoom(1));
+     toolbar.append(zoomOut,zoomLabel,zoomIn,fit);
+   }
+ }
+ if(kind==='pdf'){
+   const pageLabel=document.createElement('span');pageLabel.className='media-time';pageLabel.id='pdfPageLabel';pageLabel.textContent='Page 1';
+   const prev=document.createElement('button');prev.type='button';prev.textContent='← Page';prev.addEventListener('click',()=>goPdfPage(Math.max(1,pdfCurrentPage-1),leader));
+   const next=document.createElement('button');next.type='button';next.textContent='Page →';next.addEventListener('click',()=>goPdfPage(Math.min(pdfDocument?.numPages||1,pdfCurrentPage+1),leader));
+   const minus=document.createElement('button');minus.type='button';minus.textContent='−';minus.title='Zoom out';minus.addEventListener('click',()=>setPdfZoom(Math.max(.5,pdfScale-.15),leader));
+   const zoom=document.createElement('span');zoom.className='media-time';zoom.id='pdfZoomLabel';zoom.textContent='100%';
+   const plus=document.createElement('button');plus.type='button';plus.textContent='+';plus.title='Zoom in';plus.addEventListener('click',()=>setPdfZoom(Math.min(2.5,pdfScale+.15),leader));
+   const fit=document.createElement('button');fit.type='button';fit.textContent='Fit width';fit.addEventListener('click',()=>fitPdfWidth(leader));
+   toolbar.append(prev,pageLabel,next,minus,zoom,plus,fit);
+ }
+ content.parentElement.insertBefore(toolbar,content);
+}
+
+function formatTime(seconds){
+ if(!Number.isFinite(seconds))return '0:00';
+ const n=Math.max(0,Math.floor(seconds));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0');
+}
+
+async function renderPdfPage(pageNumber,scale,token){
+ if(!pdfDocument||token!==pdfRenderToken)return;
+ const page=await pdfDocument.getPage(pageNumber);
+ if(token!==pdfRenderToken)return;
+ const viewport=page.getViewport({scale});
+ const canvas=document.createElement('canvas');
+ canvas.className='pdf-page';canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+ canvas.style.width=viewport.width+'px';canvas.style.height=viewport.height+'px';
+ canvas.dataset.page=String(pageNumber);
+ const wrap=document.createElement('div');wrap.className='pdf-page-wrap';wrap.dataset.page=String(pageNumber);wrap.append(canvas);
+ $('pdfPages').append(wrap);
+ await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+}
+
+async function renderPdf(scale,preservePage=true){
+ if(!pdfDocument)return;
+ const token=++pdfRenderToken;
+ const scroll=$('pdfScroll');
+ const pageToKeep=preservePage?pdfCurrentPage:1;
+ $('pdfPages').replaceChildren();
+ pdfScale=scale;
+ for(let page=1;page<=pdfDocument.numPages;page++)await renderPdfPage(page,scale,token);
+ if(token!==pdfRenderToken)return;
+ pdfCurrentPage=Math.min(pageToKeep,pdfDocument.numPages);
+ const target=$('pdfPages').querySelector(`[data-page="${pdfCurrentPage}"]`);
+ if(target)scroll.scrollTop=target.getBoundingClientRect().top-scroll.getBoundingClientRect().top+scroll.scrollTop;
+ updatePdfToolbar();
+}
+
+function updatePdfToolbar(){
+ const label=$('pdfPageLabel');if(label)label.textContent=`Page ${pdfCurrentPage} / ${pdfDocument?.numPages||1}`;
+ const zoom=$('pdfZoomLabel');if(zoom)zoom.textContent=Math.round(pdfScale*100)+'%';
+}
+
+function goPdfPage(page,leader){
+ if(!pdfDocument)return;
+ pdfCurrentPage=Math.max(1,Math.min(pdfDocument.numPages,page));
+ const target=$('pdfPages').querySelector(`[data-page="${pdfCurrentPage}"]`);
+ if(target){const sc=$('pdfScroll');sc.scrollTo({top:target.getBoundingClientRect().top-sc.getBoundingClientRect().top+sc.scrollTop,behavior:'smooth'});}
+ updatePdfToolbar();
+ if(leader)sendClassEvent({type:'pdf-view',id:activeMaterialId,page:pdfCurrentPage,scale:pdfScale});
+}
+
+async function setPdfZoom(scale,leader){
+ await renderPdf(scale,true);
+ if(leader)sendClassEvent({type:'pdf-view',id:activeMaterialId,page:pdfCurrentPage,scale:pdfScale});
+}
+
+async function fitPdfWidth(leader){
+ if(!pdfDocument)return;
+ const page=await pdfDocument.getPage(1);
+ const base=page.getViewport({scale:1});
+ const width=Math.max(320,$('pdfScroll').clientWidth-44);
+ await setPdfZoom(Math.max(.5,Math.min(2.5,width/base.width)),leader);
+}
+
+async function displayMaterial(id,leader,viewState=null){
  if(!currentClassId||!room)return;
-
- const {data:m,error}=await sb
-   .from('class_materials')
+ const {data:m,error}=await sb.from('class_materials')
    .select('id,class_id,title,material_type,storage_path')
-   .eq('id',id)
-   .is('deleted_at',null)
-   .maybeSingle();
-
- if(error||!m){
-   setStatus('This material could not be opened. Check that the class is live and you have access.','error');
-   return;
- }
-
- if(String(m.class_id)!==String(currentClassId)){
-   setStatus('This material does not belong to the current classroom.','error');
-   return;
- }
-
- const {data:link,error:linkError}=await sb
-   .storage
-   .from('class-materials')
-   .createSignedUrl(m.storage_path,300);
-
- if(linkError||!link?.signedUrl){
-   setStatus('Could not open material: '+(linkError?.message||'Access denied'),'error');
-   return;
- }
-
+   .eq('id',id).is('deleted_at',null).maybeSingle();
+ if(error||!m){setStatus('This material could not be opened. Check that the class is live and you have access.','error');return;}
+ if(String(m.class_id)!==String(currentClassId)){setStatus('This material does not belong to the current classroom.','error');return;}
+ const {data:link,error:linkError}=await sb.storage.from('class-materials').createSignedUrl(m.storage_path,300);
+ if(linkError||!link?.signedUrl){setStatus('Could not open material: '+(linkError?.message||'Access denied'),'error');return;}
  activeMaterialId=m.id;
-
+ pdfDocument=null;pdfRenderToken++;mediaZoom=1;
  let tile=document.getElementById('materialPresentationTile');
-
- if(!tile){
-   tile=document.createElement('div');
-   tile.id='materialPresentationTile';
-   tile.className='video-tile screen-share-tile material-presentation';
-   $('videoGrid').prepend(tile);
- }
-
+ if(!tile){tile=document.createElement('div');tile.id='materialPresentationTile';tile.className='video-tile screen-share-tile material-presentation';$('videoGrid').prepend(tile);}
  tile.replaceChildren();
-
- const heading=document.createElement('div');
- heading.className='presentation-heading';
- heading.textContent=m.title;
- tile.append(heading);
-
- const content=document.createElement('div');
- content.className='presentation-content';
- tile.append(content);
-
+ const heading=document.createElement('div');heading.className='presentation-heading';heading.textContent=m.title;tile.append(heading);
+ const content=document.createElement('div');content.className='presentation-content';tile.append(content);
  let media;
-
- if(m.material_type==='audio'){
-   media=document.createElement('audio');
-   media.src=link.signedUrl;
-   media.controls=leader;
-   media.autoplay=leader;
+ if(m.material_type==='audio'||m.material_type==='video'){
+   media=document.createElement(m.material_type==='audio'?'audio':'video');
+   media.src=link.signedUrl;media.preload='metadata';media.autoplay=!!leader;media.playsInline=true;
    media.className='presented-media';
-   media.style.height='auto';
-   media.style.minHeight='80px';
-   media.style.margin='auto';
- }else if(m.material_type==='video'){
-   media=document.createElement('video');
-   media.src=link.signedUrl;
-   media.controls=leader;
-   media.autoplay=leader;
-   media.playsInline=true;
-   media.className='presented-media';
+   if(m.material_type==='audio'){
+     media.style.height='auto';media.style.minHeight='80px';media.style.width='100%';content.append(media);
+   }else{
+     mediaZoom=1;
+     const wrap=document.createElement('div');wrap.className='video-zoom-wrap';wrap.id='videoZoomWrap';
+     media.style.width='100%';media.style.height='100%';wrap.append(media);content.append(wrap);
+   }
+   addPresentationToolbar(content,m.material_type,leader,media);
+   if(leader)media.play().catch(()=>{});
+ }else if(m.material_type==='note'){
+   const isPdf=String(m.storage_path||'').toLowerCase().endsWith('.pdf');
+   if(!isPdf){
+     const pre=document.createElement('pre');pre.className='pdf-loading';pre.style.whiteSpace='pre-wrap';pre.style.textAlign='left';pre.style.overflow='auto';pre.style.height='100%';pre.textContent='Loading notes…';content.append(pre);
+     try{const response=await fetch(link.signedUrl);if(!response.ok)throw new Error('Download failed');pre.textContent=await response.text();}
+     catch(error){pre.textContent='Could not display these notes.';console.warn('Text note preview failed',error);}
+   }else{
+     content.innerHTML='<div class="pdf-loading">Loading PDF presentation…</div>';
+     const scroll=document.createElement('div');scroll.id='pdfScroll';scroll.className='pdf-scroll';
+     const pages=document.createElement('div');pages.id='pdfPages';pages.className='pdf-pages';scroll.append(pages);
+     content.replaceChildren(scroll);
+     addPresentationToolbar(content,'pdf',leader);
+     try{
+       const pdfjs=await getPdfJs();
+       pdfDocument=await pdfjs.getDocument({url:link.signedUrl}).promise;
+       await renderPdf(viewState?.scale||1,false);
+       if(viewState?.page)goPdfPage(viewState.page,false);else await fitPdfWidth(false);
+       let lastPage=0;
+       scroll.addEventListener('scroll',()=>{
+         const wraps=[...pages.querySelectorAll('.pdf-page-wrap')];
+         const current=wraps.find(w=>w.getBoundingClientRect().bottom>scroll.getBoundingClientRect().top+20)||wraps[wraps.length-1];
+         const next=Number(current?.dataset.page||1);
+         if(next!==lastPage){lastPage=next;pdfCurrentPage=next;updatePdfToolbar();if(leader){clearTimeout(pdfSyncTimer);pdfSyncTimer=setTimeout(()=>sendClassEvent({type:'pdf-view',id:activeMaterialId,page:pdfCurrentPage,scale:pdfScale}),250);}}
+       },{passive:true});
+     }catch(error){content.innerHTML='<div class="pdf-loading">Could not display this PDF. Please try again or download it from the material list.</div>';console.warn('PDF presentation failed',error);}
+   }
  }else{
-   media=document.createElement('iframe');
-   media.src=link.signedUrl;
-   media.title=m.title;
-   media.setAttribute('allow','fullscreen');
-   media.className='presented-media';
-   media.style.height='100%';
- }
-
- media.id='presentedMedia';
- content.append(media);
-
- /*
-  * Only the presenter publishes playback events.
-  * Remote participants receive those events and follow them.
-  */
- if(leader&&(m.material_type==='audio'||m.material_type==='video')){
-   media.addEventListener('play',()=>{
-     sendClassEvent({
-       type:'material-control',
-       id:m.id,
-       action:'play',
-       time:media.currentTime
-     });
-   });
-
-   media.addEventListener('pause',()=>{
-     sendClassEvent({
-       type:'material-control',
-       id:m.id,
-       action:'pause',
-       time:media.currentTime
-     });
-   });
-
-   media.addEventListener('seeked',()=>{
-     sendClassEvent({
-       type:'material-control',
-       id:m.id,
-       action:'seek',
-       time:media.currentTime
-     });
-   });
+   media=document.createElement('iframe');media.src=link.signedUrl+'#toolbar=0&navpanes=0&view=FitH';media.title=m.title;media.setAttribute('allow','fullscreen');media.className='presented-media';media.style.height='100%';content.append(media);
  }
 }
 
@@ -704,6 +795,11 @@ async function joinRoom(event){
 
    currentClassId=String(payload.classId);
    currentRole=payload.role;
+   $('muteAllBtn').classList.toggle('hidden',currentRole!=='teacher');
+   studentsMuted=false;
+   $('muteAllBtn').innerHTML='<span class="control-icon" aria-hidden="true">🔇</span>';
+   $('muteAllBtn').title='Mute all students';
+   $('muteAllBtn').setAttribute('aria-label','Mute all students');
 
    room=new Room({
      adaptiveStream:true,
@@ -763,6 +859,14 @@ async function joinRoom(event){
 
        if(message.type==='material-open'&&message.id){
          displayMaterial(message.id,false);
+         return;
+       }
+
+       if(message.type==='pdf-view'&&message.id===activeMaterialId&&currentRole!=='teacher'){
+         if(pdfDocument&&Number.isFinite(message.scale)&&Number.isFinite(message.page)){
+           if(Math.abs(pdfScale-message.scale)>.02)renderPdf(message.scale,true).then(()=>goPdfPage(message.page,false));
+           else goPdfPage(message.page,false);
+         }
          return;
        }
 
@@ -949,12 +1053,36 @@ $('shareBtn').addEventListener('click',async()=>{
    sharing=nextState;
 
    $('shareBtn').innerHTML='<span class="control-icon" aria-hidden="true">▣</span>';
+ $('muteAllBtn').classList.add('hidden');
+ $('muteAllBtn').disabled=false;
+ studentsMuted=false;
    $('shareBtn').setAttribute('aria-label',sharing?'Stop sharing screen':'Share screen');
    $('shareBtn').title=sharing?'Stop sharing screen':'Share screen';
  }catch(error){
    sharing=false;
    setStatus('Screen sharing was cancelled or is not supported by this browser.','error');
  }
+});
+
+$('muteAllBtn').addEventListener('click',async()=>{
+ if(!room||currentRole!=='teacher')return;
+ const nextMuted=!studentsMuted;
+ $('muteAllBtn').disabled=true;
+ try{
+   const {data:{session}}=await sb.auth.getSession();
+   const response=await fetch('/api/livekit-mute-students',{
+     method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+     body:JSON.stringify({roomName:currentRoom,classId:currentClassId,muted:nextMuted})
+   });
+   const result=await response.json().catch(()=>({error:'Invalid response from classroom server.'}));
+   if(!response.ok)throw new Error(result.error||'Could not change student microphones.');
+   studentsMuted=nextMuted;
+   $('muteAllBtn').innerHTML=`<span class="control-icon" aria-hidden="true">${studentsMuted?'🔊':'🔇'}</span>`;
+   $('muteAllBtn').title=studentsMuted?'Unmute all students':'Mute all students';
+   $('muteAllBtn').setAttribute('aria-label',studentsMuted?'Unmute all students':'Mute all students');
+   setStatus(studentsMuted?`Muted ${result.mutedTracks||0} student microphone(s).`:`Unmuted ${result.unmutedTracks||0} student microphone(s).`,'ok');
+ }catch(error){setStatus(error.message||'Could not change student microphones.','error');}
+ finally{$('muteAllBtn').disabled=false;}
 });
 
 $('leaveBtn').addEventListener('click',async()=>{
@@ -996,6 +1124,9 @@ $('leaveBtn').addEventListener('click',async()=>{
  $('camBtn').title='Turn camera off';
 
  $('shareBtn').innerHTML='<span class="control-icon" aria-hidden="true">▣</span>';
+ $('muteAllBtn').classList.add('hidden');
+ $('muteAllBtn').disabled=false;
+ studentsMuted=false;
  $('shareBtn').setAttribute('aria-label','Share screen');
  $('shareBtn').title='Share screen';
 
