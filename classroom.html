@@ -36,7 +36,7 @@
 .video-grid:has(.screen-share-tile) .screen-share-tile video{object-fit:contain;min-height:420px;background:#080d0c}
 .video-grid:has(.screen-share-tile) .material-presentation{grid-column:1;grid-row:1 / span 20;min-height:520px;height:100%;order:-1;background:#fff;color:#17221d;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
 .material-presentation iframe{display:block;width:100%;height:100%;min-height:420px;border:0;background:#fff;position:relative;inset:auto}
-.presentation-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;background:#eef2ee;color:#17221d;border-bottom:1px solid #dce4dc;flex:0 0 auto}
+.presentation-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;background:#eef2ee;color:#17221d;border-bottom:1px solid #dce4dc;flex:0 0 auto;position:relative;z-index:3}
 .presentation-toolbar button{border:1px solid #cbd6cc;background:#fff;color:#173d35;border-radius:8px;padding:6px 10px;font-weight:700;cursor:pointer}
 .presentation-toolbar button:disabled{opacity:.45;cursor:not-allowed}
 .presentation-toolbar .media-progress{flex:1;min-width:90px;accent-color:#176b50}
@@ -222,7 +222,7 @@
     <button class="control-btn" id="micBtn" type="button" aria-label="Mute microphone" title="Mute microphone"><span class="control-icon" aria-hidden="true">🎙</span></button>
     <button class="control-btn" id="camBtn" type="button" aria-label="Turn camera off" title="Turn camera off"><span class="control-icon" aria-hidden="true">📹</span></button>
     <button class="control-btn" id="shareBtn" type="button" aria-label="Share screen" title="Share screen"><span class="control-icon" aria-hidden="true">▣</span></button>
-    <button class="control-btn hidden" id="muteAllBtn" type="button" aria-label="Mute all students" title="Mute all students"><span class="control-icon" aria-hidden="true">🔇</span></button>
+    <button class="control-btn hidden" id="muteAllBtn" type="button" aria-label="Mute all students" title="Mute all students (tutor only)"><span class="control-icon" aria-hidden="true">🔇</span></button>
     <button class="control-btn danger" id="leaveBtn" type="button" aria-label="Leave classroom" title="Leave classroom"><span class="control-icon" aria-hidden="true">☎</span></button>
    </div>
   </div>
@@ -651,8 +651,8 @@ async function displayMaterial(id,leader,viewState=null){
  let media;
  if(m.material_type==='audio'||m.material_type==='video'){
    media=document.createElement(m.material_type==='audio'?'audio':'video');
-   media.src=link.signedUrl;media.preload='metadata';media.autoplay=!!leader;media.playsInline=true;
-   media.className='presented-media';
+   media.src=link.signedUrl;media.preload='metadata';media.autoplay=false;media.playsInline=true;
+   media.id='presentedMedia';media.className='presented-media';media.controls=false;
    if(m.material_type==='audio'){
      media.style.height='auto';media.style.minHeight='80px';media.style.width='100%';content.append(media);
    }else{
@@ -661,9 +661,9 @@ async function displayMaterial(id,leader,viewState=null){
      media.style.width='100%';media.style.height='100%';wrap.append(media);content.append(wrap);
    }
    addPresentationToolbar(content,m.material_type,leader,media);
-   if(leader)media.play().catch(()=>{});
- }else if(m.material_type==='note'){
-   const isPdf=String(m.storage_path||'').toLowerCase().endsWith('.pdf');
+   // Playback starts only when the tutor presses Play in the presentation toolbar.
+ }else if(m.material_type==='note'||String(m.storage_path||'').toLowerCase().split('?')[0].endsWith('.pdf')){
+   const isPdf=String(m.storage_path||'').toLowerCase().split('?')[0].endsWith('.pdf');
    if(!isPdf){
      const pre=document.createElement('pre');pre.className='pdf-loading';pre.style.whiteSpace='pre-wrap';pre.style.textAlign='left';pre.style.overflow='auto';pre.style.height='100%';pre.textContent='Loading notes…';content.append(pre);
      try{const response=await fetch(link.signedUrl);if(!response.ok)throw new Error('Download failed');pre.textContent=await response.text();}
@@ -694,7 +694,7 @@ async function displayMaterial(id,leader,viewState=null){
 }
 
 async function applyMaterialControl(message){
- const media=$('presentedMedia');
+ const media=$('presentedMedia')||$('videoGrid')?.querySelector('.material-presentation audio, .material-presentation video');
 
  if(!media||!['AUDIO','VIDEO'].includes(media.tagName))return;
  if(message.id!==activeMaterialId)return;
