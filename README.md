@@ -108,3 +108,7 @@ Run `supabase/migrations/20261024_registrar_class_creation_and_student_enrolment
 ## Registrar schedule and live classroom update
 
 Apply `supabase/migrations/20261024_registrar_live_schedule_edit.sql` in Supabase SQL Editor after the existing classroom and registrar migrations. It adds class presence heartbeats, restricts registrar schedule visibility to 12 hours before start through 6 hours after the scheduled end, and allows editing existing classes. Deploy the updated `admin.html`, `teacher.html`, and `classroom.html` together. Test with a tutor and an enrolled student account.
+
+## Class recordings
+
+See `RECORDING-SETUP.md` for the private Supabase `class-recordings` bucket, S3 credentials, LiveKit Egress configuration, and registrar/tutor test procedure. Apply `supabase/migrations/20261102_class_recordings_private_bucket.sql` before using the recording controls.

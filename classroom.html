@@ -213,7 +213,7 @@
   <div class="stage">
    <div class="stage-top">
     <strong id="roomTitle">Live classroom</strong>
-    <span class="live-pill">● Connected</span>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="live-pill">● Connected</span><a class="btn btn-outline" id="backDashboardBtn" href="dashboard.html">← Back to dashboard</a></div>
    </div>
 
    <div id="videoGrid" class="video-grid"></div>
@@ -275,6 +275,7 @@ let currentName='';
 let currentRoom='';
 let currentClassId=null;
 let currentRole='';
+let dashboardReturnUrl='dashboard.html';
 let activeMaterialId=null;
 let presenceTimer=null;
 let materialRefreshTimer=null;
@@ -730,6 +731,8 @@ function esc(value){
  }[char]));
 }
 
+async function notifyRecording(action){if(!sb||!currentClassId||currentRole!=='teacher')return;try{const {data:{session}}=await sb.auth.getSession();if(!session)return;const response=await fetch('/api/class-recordings',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({action,classId:currentClassId})});const result=await response.json().catch(()=>({}));if(!response.ok&&action==='start-on-live')addChat('Classroom',result.error||'The class recording could not be started.');}catch(error){if(action==='start-on-live')addChat('Classroom','Recording could not be started: '+(error.message||'server error'));}}
+
 async function joinRoom(event){
  event.preventDefault();
 
@@ -795,6 +798,9 @@ async function joinRoom(event){
 
    currentClassId=String(payload.classId);
    currentRole=payload.role;
+   dashboardReturnUrl=currentRole==='teacher'?'teacher.html':'dashboard.html';
+   $('backDashboardBtn').href=dashboardReturnUrl;
+   $('backDashboardBtn').textContent=currentRole==='teacher'?'← Back to tutor dashboard':'← Back to student dashboard';
    $('muteAllBtn').classList.toggle('hidden',currentRole!=='teacher');
    studentsMuted=false;
    $('muteAllBtn').innerHTML='<span class="control-icon" aria-hidden="true">🔇</span>';
@@ -899,6 +905,7 @@ async function joinRoom(event){
 
    currentName=displayName;
    currentRoom=roomName;
+   if(currentRole==='teacher')await notifyRecording('start-on-live');
 
    $('roomTitle').textContent=
      payload.classTitle||roomName.replace(/[-_]/g,' ');
@@ -1085,7 +1092,18 @@ $('muteAllBtn').addEventListener('click',async()=>{
  finally{$('muteAllBtn').disabled=false;}
 });
 
+$('backDashboardBtn').addEventListener('click',async(event)=>{
+ event.preventDefault();
+ const destination=dashboardReturnUrl;
+ await notifyRecording('stop');
+ await stopPresenceHeartbeat();
+ if(room){try{await room.disconnect();}catch{} room=null;}
+ if(materialRefreshTimer){clearInterval(materialRefreshTimer);materialRefreshTimer=null;}
+ location.href=destination;
+});
+
 $('leaveBtn').addEventListener('click',async()=>{
+ await notifyRecording('stop');
  await stopPresenceHeartbeat();
 
  if(room){
