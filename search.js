@@ -1,6 +1,6 @@
 (() => {
  const publicPages = [
-  ['/home','Home'],['about.html','About the school'],['courses.html','Courses'],['learning-method.html','Learning method'],['admissions.html','Admissions'],['contact.html','Contact'],['faq.html','Frequently asked questions'],['germany-pathways.html','Germany pathways'],['e-learning.html','Online learning'],['blog.html','Blog'],['shop.html','Learning materials shop'],['school.html','Student registration and school area']
+  ['index.html','Home'],['about.html','About the school'],['courses.html','Courses'],['learning-method.html','Learning method'],['admissions.html','Admissions'],['contact.html','Contact'],['faq.html','Frequently asked questions'],['germany-pathways.html','Germany pathways'],['e-learning.html','Online learning'],['blog.html','Blog'],['shop.html','Learning materials shop'],['school.html','Student registration and school area']
  ];
  const params = new URLSearchParams(location.search);
  const q = (params.get('q') || '').trim();
