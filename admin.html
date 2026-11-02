@@ -103,7 +103,17 @@ async function loadApprovedStudents(){
   const {data,error}=await sb.rpc('registrar_approved_students');
   if(error){box.textContent='Could not load approved students: '+error.message;return;}
   if(!data?.length){box.innerHTML='<p class="muted">No approved students found.</p>';return;}
-  box.innerHTML='<div style="overflow-x:auto"><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Course / level</th></tr></thead><tbody>'+data.map(st=>`<tr><td>${escapeHtml(st.student_name)}</td><td>${escapeHtml(st.student_email||'')}</td><td>${escapeHtml(st.student_level||'—')}</td></tr>`).join('')+'</tbody></table></div>';
+  const ids=data.map(st=>st.student_id).filter(Boolean);const {data:accessRows}=ids.length?await sb.from('profiles').select('id,access_suspended').in('id',ids):{data:[]};const suspendedMap=new Map((accessRows||[]).map(r=>[r.id,r.access_suspended===true]));
+  box.innerHTML='<p class="muted">Suspension blocks new live-class tokens. Restoring access allows the student to request a new connection.</p><div style="overflow-x:auto"><table class="table"><thead><tr><th>Name</th><th>Email</th><th>Course / level</th><th>Live-class access</th></tr></thead><tbody>'+data.map(st=>{const suspended=suspendedMap.get(st.student_id)===true;return `<tr><td>${escapeHtml(st.student_name)}</td><td>${escapeHtml(st.student_email||'')}</td><td>${escapeHtml(st.student_level||'—')}</td><td><button class="btn btn-outline" type="button" data-student-access="${escapeHtml(st.student_id)}" data-suspended="${suspended}">${suspended?'Restore access':'Suspend access'}</button> <span class="muted">${suspended?'Suspended':'Allowed'}</span></td></tr>`}).join('')+'</tbody></table></div>';
+  box.querySelectorAll('[data-student-access]').forEach(btn=>btn.addEventListener('click',async()=>{
+    const suspend=btn.dataset.suspended!=='true';
+    const action=suspend?'suspend':'restore';
+    if(!confirm(`Are you sure you want to ${action} this student's live-class access?`))return;
+    const {data:{session}}=await sb.auth.getSession();if(!session){alert('Please sign in again.');return}
+    btn.disabled=true;btn.textContent=suspend?'Suspending…':'Restoring…';
+    try{const response=await fetch('/api/registrar-student-access',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},body:JSON.stringify({student_id:btn.dataset.studentAccess,suspended:suspend})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Request failed');alert(suspend?'Student live-class access suspended.':'Student live-class access restored.');await loadApprovedStudents();}
+    catch(err){alert(err.message||'Could not update student access.');btn.disabled=false;btn.textContent='Suspend access';}
+  }));
 }
 async function loadApprovedTutors(){
   const box=document.getElementById('approvedTutorsList');if(!box)return;

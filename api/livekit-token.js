@@ -1,5 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
-const { AccessToken } = require('livekit-server-sdk');
+const { AccessToken, RoomServiceClient } = require('livekit-server-sdk');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -53,6 +53,9 @@ module.exports = async function handler(req, res) {
     if (!isTeacher) {
       if (!profile || profile.access_approved !== true) {
         return res.status(403).json({ error: 'Your school account is not yet approved for live classes. Please contact the registrar.' });
+      }
+      if (profile.access_suspended === true) {
+        return res.status(403).json({ error: 'Your live-class access has been suspended by the registrar. Please contact the school.' });
       }
       const expiry = profile.access_expires_at ? new Date(profile.access_expires_at) : null;
       if (!expiry || Number.isNaN(expiry.getTime()) || expiry <= new Date()) {

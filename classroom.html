@@ -69,14 +69,6 @@
 .control-btn:focus-visible{outline:3px solid #a7d7c2;outline-offset:3px}
 .control-btn:disabled{opacity:.5;cursor:not-allowed}
 .control-btn .control-icon{display:block}
-.control-btn.media-on{background:#176b45;border-color:#42b883;color:#fff;box-shadow:0 0 0 2px #42b88333}
-.control-btn.media-on:hover{background:#125638}
-.control-btn.media-off{background:#9f2525;border-color:#f07878;color:#fff;box-shadow:0 0 0 2px #f0787833}
-.control-btn.media-off:hover{background:#801d1d}
-.control-btn .control-icon{font-size:1.35rem}
-.control-btn .control-state{position:absolute;bottom:-5px;right:-5px;width:13px;height:13px;border:2px solid #17231f;border-radius:50%;background:#42b883}
-.control-btn.media-off .control-state{background:#ff7777}
-.control-btn{position:relative}
 .side-panel{display:flex;flex-direction:column;gap:18px}
 .panel h2{font-size:1.15rem;margin-bottom:12px}
 .chat-log{height:230px;overflow:auto;background:#f7f8f5;border-radius:10px;padding:10px;font-size:.86rem}
@@ -227,8 +219,8 @@
    <div id="videoGrid" class="video-grid"></div>
 
    <div class="controls">
-    <button class="control-btn" id="micBtn" type="button" aria-label="Mute microphone" title="Mute microphone"><span class="control-icon" aria-hidden="true">🎙</span><span class="control-state" aria-hidden="true"></span></button>
-    <button class="control-btn" id="camBtn" type="button" aria-label="Turn camera off" title="Turn camera off"><span class="control-icon" aria-hidden="true">📹</span><span class="control-state" aria-hidden="true"></span></button>
+    <button class="control-btn" id="micBtn" type="button" aria-label="Mute microphone" title="Mute microphone"><span class="control-icon" aria-hidden="true">🎙</span></button>
+    <button class="control-btn" id="camBtn" type="button" aria-label="Turn camera off" title="Turn camera off"><span class="control-icon" aria-hidden="true">📹</span></button>
     <button class="control-btn" id="shareBtn" type="button" aria-label="Share screen" title="Share screen"><span class="control-icon" aria-hidden="true">▣</span></button>
     <button class="control-btn hidden" id="muteAllBtn" type="button" aria-label="Mute all students" title="Mute all students (tutor only)"><span class="control-icon" aria-hidden="true">🔇</span></button>
     <button class="control-btn danger" id="leaveBtn" type="button" aria-label="Leave classroom" title="Leave classroom"><span class="control-icon" aria-hidden="true">☎</span></button>
@@ -289,26 +281,6 @@ let presenceTimer=null;
 let materialRefreshTimer=null;
 let micOn=true;
 let camOn=true;
-
-function syncMediaControls(){
- const mic=$('micBtn');
- const cam=$('camBtn');
- if(!mic||!cam)return;
- mic.classList.toggle('media-on',micOn);
- mic.classList.toggle('media-off',!micOn);
- mic.innerHTML=micOn
-   ? '<span class="control-icon" aria-hidden="true">🎙</span><span class="control-state" aria-hidden="true"></span>'
-   : '<span class="control-icon" aria-hidden="true">🔇</span><span class="control-state" aria-hidden="true"></span>';
- mic.setAttribute('aria-label',micOn?'Mute microphone':'Unmute microphone');
- mic.title=micOn?'Microphone on — click to mute':'Microphone off — click to unmute';
- cam.classList.toggle('media-on',camOn);
- cam.classList.toggle('media-off',!camOn);
- cam.innerHTML=camOn
-   ? '<span class="control-icon" aria-hidden="true">📹</span><span class="control-state" aria-hidden="true"></span>'
-   : '<span class="control-icon" aria-hidden="true">🚫</span><span class="control-state" aria-hidden="true"></span>';
- cam.setAttribute('aria-label',camOn?'Turn camera off':'Turn camera on');
- cam.title=camOn?'Camera on — click to turn off':'Camera off — click to turn on';
-}
 let sharing=false;
 let studentsMuted=false;
 let pdfDocument=null;
@@ -983,7 +955,6 @@ async function joinRoom(event){
    try{
      await room.localParticipant.setMicrophoneEnabled(true);
      await room.localParticipant.setCameraEnabled(true);
-     micOn=true;camOn=true;syncMediaControls();
    }catch(error){
      addChat(
        'Classroom',
@@ -1039,7 +1010,9 @@ $('micBtn').addEventListener('click',async()=>{
    await room.localParticipant.setMicrophoneEnabled(nextState);
    micOn=nextState;
 
-   syncMediaControls();
+   $('micBtn').innerHTML='<span class="control-icon" aria-hidden="true">🎙</span>';
+   $('micBtn').setAttribute('aria-label',micOn?'Mute microphone':'Unmute microphone');
+   $('micBtn').title=micOn?'Mute microphone':'Unmute microphone';
  }catch(error){
    setStatus('Could not change microphone. Check browser permissions.','error');
  }
@@ -1054,7 +1027,9 @@ $('camBtn').addEventListener('click',async()=>{
    await room.localParticipant.setCameraEnabled(nextState);
    camOn=nextState;
 
-   syncMediaControls();
+   $('camBtn').innerHTML='<span class="control-icon" aria-hidden="true">📹</span>';
+   $('camBtn').setAttribute('aria-label',camOn?'Turn camera off':'Turn camera on');
+   $('camBtn').title=camOn?'Turn camera off':'Turn camera on';
 
    const tile=document.getElementById(
      'tile-'+(room.localParticipant.sid||room.localParticipant.identity)
@@ -1175,7 +1150,6 @@ $('leaveBtn').addEventListener('click',async()=>{
 
  micOn=true;
  camOn=true;
- syncMediaControls();
  sharing=false;
 });
 
