@@ -111,4 +111,4 @@ Apply `supabase/migrations/20261024_registrar_live_schedule_edit.sql` in Supabas
 
 ## Class recordings
 
-See `RECORDING-SETUP.md` for the private Supabase `class-recordings` bucket, S3 credentials, LiveKit Egress configuration, and registrar/tutor test procedure. Apply `supabase/migrations/20261102_class_recordings_private_bucket.sql` before using the recording controls.
+See `YOUTUBE-LIVE-SETUP.md` for direct private YouTube Live streaming from LiveKit Egress, Google OAuth, the Supabase metadata migration, Vercel configuration, and the registrar/tutor test procedure. This version does not store class video files in Supabase Storage.
