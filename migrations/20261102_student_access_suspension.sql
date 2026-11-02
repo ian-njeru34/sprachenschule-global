@@ -4,4 +4,4 @@ alter table public.profiles
   add column if not exists access_suspended boolean not null default false;
 
 comment on column public.profiles.access_suspended is
-  'When true, the student cannot obtain a LiveKit classroom token; distinct from approval status.';
+  'When true, the account cannot obtain a LiveKit classroom token; distinct from approval status and usable for students or tutors.';

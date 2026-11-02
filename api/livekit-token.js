@@ -50,6 +50,11 @@ module.exports = async function handler(req, res) {
     const email = (user.email || '').toLowerCase();
     const profileRole = String(profile && (profile.role || profile.account_role || profile.user_role) || '').toLowerCase();
     const isTeacher = allowedTeacherEmails.includes(email) || ['tutor', 'teacher', 'admin', 'registrar'].includes(profileRole);
+    // A registrar can suspend an approved tutor without changing their role or deleting assignments.
+    // Admin/registrar accounts are not affected by tutor suspension.
+    if (['tutor', 'teacher'].includes(profileRole) && profile?.access_suspended === true) {
+      return res.status(403).json({ error: 'Your live-class access has been suspended by the registrar. Please contact the school.' });
+    }
     if (!isTeacher) {
       if (!profile || profile.access_approved !== true) {
         return res.status(403).json({ error: 'Your school account is not yet approved for live classes. Please contact the registrar.' });

@@ -14,11 +14,14 @@ module.exports = async function handler(req, res) {
     db.from('profiles').select('role').eq('id',auth.user.id).maybeSingle()
   ]);
   if(!registrar&&!['registrar','admin'].includes(String(actor?.role||'').toLowerCase())) return res.status(403).json({error:'Registrar permission is required.'});
-  const studentId=String(req.body?.student_id||''); const suspended=req.body?.suspended;
-  if(!studentId||typeof suspended!=='boolean') return res.status(400).json({error:'Student and access state are required.'});
-  const {data:student,error:studentError}=await db.from('profiles').select('id,role').eq('id',studentId).maybeSingle();
-  if(studentError||!student||!['student','pending_student'].includes(String(student.role||'').toLowerCase())) return res.status(404).json({error:'Student account not found.'});
-  const {error}=await db.from('profiles').update({access_suspended:suspended}).eq('id',studentId);
-  if(error){console.error('Student access update failed:',error.message);return res.status(500).json({error:'Could not update student access. Apply the included SQL migration, then try again.'});}
-  return res.status(200).json({ok:true,student_id:studentId,suspended});
+  const accountId=String(req.body?.student_id||req.body?.tutor_id||''); const accountType=req.body?.tutor_id?'tutor':'student'; const suspended=req.body?.suspended;
+  if(!accountId||typeof suspended!=='boolean') return res.status(400).json({error:'Account and access state are required.'});
+  const {data:target,error:targetError}=await db.from('profiles').select('id,role').eq('id',accountId).maybeSingle();
+  const role=String(target?.role||'').toLowerCase();
+  const validRoles=accountType==='tutor'?['tutor','teacher']:['student','pending_student'];
+  if(targetError||!target||!validRoles.includes(role)) return res.status(404).json({error:accountType==='tutor'?'Approved tutor account not found.':'Student account not found.'});
+  if(accountType==='tutor'&&role==='teacher') { /* legacy teacher role is supported */ }
+  const {error}=await db.from('profiles').update({access_suspended:suspended}).eq('id',accountId);
+  if(error){console.error('Account access update failed:',error.message);return res.status(500).json({error:'Could not update access. Confirm the access_suspended SQL migration has been applied.'});}
+  return res.status(200).json({ok:true,account_type:accountType,account_id:accountId,suspended});
 };
