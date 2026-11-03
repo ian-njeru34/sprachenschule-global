@@ -69,6 +69,11 @@
 .control-btn:focus-visible{outline:3px solid #a7d7c2;outline-offset:3px}
 .control-btn:disabled{opacity:.5;cursor:not-allowed}
 .control-btn .control-icon{display:block}
+.control-btn.is-active{background:#176b50;border-color:#53a982;box-shadow:0 0 0 2px rgba(83,169,130,.18)}
+.control-btn.is-inactive{background:#7d2929;border-color:#b94b4b}
+.control-btn.is-active:hover{background:#12563f}
+.control-btn.is-inactive:hover{background:#682020}
+.control-btn[aria-pressed="true"]{outline:2px solid #a7d7c2;outline-offset:2px}
 .side-panel{display:flex;flex-direction:column;gap:18px}
 .panel h2{font-size:1.15rem;margin-bottom:12px}
 .chat-log{height:230px;overflow:auto;background:#f7f8f5;border-radius:10px;padding:10px;font-size:.86rem}
@@ -182,7 +187,7 @@
  <div class="container">
   <span class="eyebrow" style="color:#f1d990">ONLINE LEARNING · LIVE</span>
   <h1>Your classroom, right here.</h1>
-  <p>Meet your tutor and classmates, practise speaking, share your screen and ask questions — all inside Sprachenschule.</p>
+  <p>Meet your tutor and classmates, practise speaking, follow lesson presentations and ask questions — all inside Sprachenschule.</p>
  </div>
 </section>
 
@@ -219,9 +224,9 @@
    <div id="videoGrid" class="video-grid"></div>
 
    <div class="controls">
-    <button class="control-btn" id="micBtn" type="button" aria-label="Mute microphone" title="Mute microphone"><span class="control-icon" aria-hidden="true">🎙</span></button>
+    <button class="control-btn is-active" id="micBtn" type="button" aria-label="Mute microphone" title="Mute microphone" aria-pressed="true"><span class="control-icon" aria-hidden="true">🎙</span></button>
     <button class="control-btn hidden" id="enableAudioBtn" type="button" aria-label="Enable classroom audio" title="Enable classroom audio"><span class="control-icon" aria-hidden="true">🔊</span></button>
-    <button class="control-btn" id="camBtn" type="button" aria-label="Turn camera off" title="Turn camera off"><span class="control-icon" aria-hidden="true">📹</span></button>
+    <button class="control-btn is-active" id="camBtn" type="button" aria-label="Turn camera off" title="Turn camera off" aria-pressed="true"><span class="control-icon" aria-hidden="true">📹</span></button>
     <button class="control-btn" id="shareBtn" type="button" aria-label="Share screen" title="Share screen"><span class="control-icon" aria-hidden="true">▣</span></button>
     <button class="control-btn hidden" id="muteAllBtn" type="button" aria-label="Mute all students" title="Mute all students (tutor only)"><span class="control-icon" aria-hidden="true">🔇</span></button>
     <button class="control-btn danger" id="leaveBtn" type="button" aria-label="Leave classroom" title="Leave classroom"><span class="control-icon" aria-hidden="true">☎</span></button>
@@ -808,6 +813,7 @@ async function joinRoom(event){
    $('backDashboardBtn').href=dashboardReturnUrl;
    $('backDashboardBtn').textContent=currentRole==='teacher'?'← Back to tutor dashboard':'← Back to student dashboard';
    $('muteAllBtn').classList.toggle('hidden',currentRole!=='teacher');
+   $('shareBtn').classList.toggle('hidden',currentRole!=='teacher');
    studentsMuted=false;
    $('muteAllBtn').innerHTML='<span class="control-icon" aria-hidden="true">🔇</span>';
    $('muteAllBtn').title='Mute all students';
@@ -1049,9 +1055,12 @@ $('micBtn').addEventListener('click',async()=>{
    await room.localParticipant.setMicrophoneEnabled(nextState);
    micOn=nextState;
 
-   $('micBtn').innerHTML='<span class="control-icon" aria-hidden="true">🎙</span>';
+   $('micBtn').innerHTML=`<span class="control-icon" aria-hidden="true">${micOn?'🎙':'🔇'}</span>`;
+   $('micBtn').classList.toggle('is-active',micOn);
+   $('micBtn').classList.toggle('is-inactive',!micOn);
+   $('micBtn').setAttribute('aria-pressed',String(micOn));
    $('micBtn').setAttribute('aria-label',micOn?'Mute microphone':'Unmute microphone');
-   $('micBtn').title=micOn?'Mute microphone':'Unmute microphone';
+   $('micBtn').title=micOn?'Microphone on — mute':'Microphone off — unmute';
  }catch(error){
    setStatus('Could not change microphone. Check browser permissions.','error');
  }
@@ -1066,9 +1075,12 @@ $('camBtn').addEventListener('click',async()=>{
    await room.localParticipant.setCameraEnabled(nextState);
    camOn=nextState;
 
-   $('camBtn').innerHTML='<span class="control-icon" aria-hidden="true">📹</span>';
+   $('camBtn').innerHTML=`<span class="control-icon" aria-hidden="true">${camOn?'📹':'🚫'}</span>`;
+   $('camBtn').classList.toggle('is-active',camOn);
+   $('camBtn').classList.toggle('is-inactive',!camOn);
+   $('camBtn').setAttribute('aria-pressed',String(camOn));
    $('camBtn').setAttribute('aria-label',camOn?'Turn camera off':'Turn camera on');
-   $('camBtn').title=camOn?'Turn camera off':'Turn camera on';
+   $('camBtn').title=camOn?'Camera on — turn off':'Camera off — turn on';
 
    const tile=document.getElementById(
      'tile-'+(room.localParticipant.sid||room.localParticipant.identity)
@@ -1090,7 +1102,7 @@ $('camBtn').addEventListener('click',async()=>{
 });
 
 $('shareBtn').addEventListener('click',async()=>{
- if(!room)return;
+ if(!room||currentRole!=='teacher')return;
 
  const nextState=!sharing;
 
@@ -1098,7 +1110,10 @@ $('shareBtn').addEventListener('click',async()=>{
    await room.localParticipant.setScreenShareEnabled(nextState);
    sharing=nextState;
 
-   $('shareBtn').innerHTML='<span class="control-icon" aria-hidden="true">▣</span>';
+   $('shareBtn').innerHTML=`<span class="control-icon" aria-hidden="true">${sharing?'▣':'▧'}</span>`;
+   $('shareBtn').classList.toggle('is-active',sharing);
+   $('shareBtn').classList.toggle('is-inactive',!sharing);
+   $('shareBtn').setAttribute('aria-pressed',String(sharing));
  $('muteAllBtn').classList.add('hidden');
  $('muteAllBtn').disabled=false;
  studentsMuted=false;
@@ -1106,6 +1121,9 @@ $('shareBtn').addEventListener('click',async()=>{
    $('shareBtn').title=sharing?'Stop sharing screen':'Share screen';
  }catch(error){
    sharing=false;
+   $('shareBtn').classList.remove('is-active');
+   $('shareBtn').classList.add('is-inactive');
+   $('shareBtn').setAttribute('aria-pressed','false');
    setStatus('Screen sharing was cancelled or is not supported by this browser.','error');
  }
 });
@@ -1173,14 +1191,21 @@ $('leaveBtn').addEventListener('click',async()=>{
  setStatus('You left the classroom. You can join again when ready.');
 
  $('micBtn').innerHTML='<span class="control-icon" aria-hidden="true">🎙</span>';
+ $('micBtn').classList.add('is-active');$('micBtn').classList.remove('is-inactive');
+ $('micBtn').setAttribute('aria-pressed','true');
  $('micBtn').setAttribute('aria-label','Mute microphone');
- $('micBtn').title='Mute microphone';
+ $('micBtn').title='Microphone on — mute';
 
  $('camBtn').innerHTML='<span class="control-icon" aria-hidden="true">📹</span>';
+ $('camBtn').classList.add('is-active');$('camBtn').classList.remove('is-inactive');
+ $('camBtn').setAttribute('aria-pressed','true');
  $('camBtn').setAttribute('aria-label','Turn camera off');
- $('camBtn').title='Turn camera off';
+ $('camBtn').title='Camera on — turn off';
 
  $('shareBtn').innerHTML='<span class="control-icon" aria-hidden="true">▣</span>';
+ $('shareBtn').classList.remove('is-active','is-inactive');
+ $('shareBtn').setAttribute('aria-pressed','false');
+ $('shareBtn').classList.toggle('hidden',currentRole!=='teacher');
  $('muteAllBtn').classList.add('hidden');
  $('muteAllBtn').disabled=false;
  studentsMuted=false;
