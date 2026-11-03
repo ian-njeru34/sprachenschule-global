@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sprachenschule Class Recording</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101b19;color:#f5faf6;font-family:Arial,sans-serif}
+#app{height:100%;display:flex;flex-direction:column;padding:18px;gap:12px}
+header{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#172824;border:1px solid #355149;border-radius:12px}
+.brand{font-weight:800;letter-spacing:.02em}.count{color:#b8d9c8;font-size:14px}
+#attendance{display:flex;gap:8px;flex-wrap:wrap;max-height:68px;overflow:hidden}
+.person{background:#294139;border-radius:999px;padding:7px 11px;font-size:13px;white-space:nowrap}
+.person small{color:#b9d9ca;margin-left:6px}
+#stage{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,4fr) minmax(190px,1fr);gap:12px}
+#focus{min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;background:#263632;border-radius:14px;overflow:hidden;position:relative}
+#focus video{width:100%;height:100%;object-fit:contain;background:#080d0c}
+#focus .placeholder{color:#b8d9c8;font-size:22px}
+#side{min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:10px}
+.tile{position:relative;min-height:110px;flex:1;background:#263632;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.tile video{width:100%;height:100%;object-fit:cover}
+.name{position:absolute;left:8px;bottom:8px;background:#000b;padding:5px 8px;border-radius:6px;font-size:12px}
+#status{font-size:11px;color:#9bb8a8;text-align:right}
+</style>
+</head>
+<body>
+<div id="app">
+<header><div class="brand">Sprachenschule · Live lesson</div><div id="count" class="count">Connecting…</div></header>
+<div id="attendance"></div>
+<div id="stage"><main id="focus"><div class="placeholder">Connecting to classroom…</div></main><aside id="side"></aside></div>
+<div id="status">Private class recording</div>
+</div>
+<script type="module">
+import {Room,RoomEvent,Track,TrackKind} from 'https://esm.sh/livekit-client@2.15.5';
+import EgressHelper from 'https://esm.sh/@livekit/egress-sdk';
+
+const params=new URLSearchParams(location.search);
+const livekitUrl=params.get('url');
+const token=params.get('token');
+const focus=document.getElementById('focus');
+const side=document.getElementById('side');
+const attendance=document.getElementById('attendance');
+const count=document.getElementById('count');
+const status=document.getElementById('status');
+const room=new Room({adaptiveStream:true,dynacast:false});
+const tiles=new Map();
+const label=p=>p.name||p.identity||'Participant';
+function role(p){try{const m=JSON.parse(p.metadata||'{}');return ['teacher','tutor'].includes(String(m.role||'').toLowerCase())?'Tutor':'Student'}catch{return 'Student'}}
+function drawAttendance(){
+ const people=[...room.remoteParticipants.values()];
+ count.textContent=people.length+' participant'+(people.length===1?'':'s')+' present';
+ attendance.replaceChildren();
+ people.forEach(p=>{const el=document.createElement('span');el.className='person';el.textContent=label(p);const r=document.createElement('small');r.textContent=role(p);el.append(r);attendance.append(el)});
+}
+function addTrack(track,publication,participant){
+ if(track.kind===Track.Kind.Audio){const el=track.attach();el.autoplay=true;el.style.display='none';document.body.append(el);return}
+ if(track.kind!==Track.Kind.Video)return;
+ const screen=publication.source===Track.Source.ScreenShare;
+ const id=participant.sid+ (screen?':screen':':camera');
+ let tile=tiles.get(id);
+ if(!tile){
+  tile=document.createElement('div');tile.className='tile';
+  const name=document.createElement('span');name.className='name';name.textContent=label(participant)+(screen?' · Shared screen':'');tile.append(name);
+  if(screen){focus.replaceChildren();tile.style.width='100%';tile.style.height='100%';tile.style.flex='none';focus.append(tile)}
+  else{side.append(tile)}
+  tiles.set(id,tile);
+ }
+ const video=track.attach();video.autoplay=true;video.playsInline=true;
+ tile.querySelectorAll('video').forEach(v=>v.remove());tile.prepend(video);
+}
+function removeTrack(track,publication,participant){
+ track.detach().forEach(el=>el.remove());
+ if(track.kind!==Track.Kind.Video)return;
+ const id=participant.sid+(publication.source===Track.Source.ScreenShare?':screen':':camera');
+ const tile=tiles.get(id);if(tile){tile.remove();tiles.delete(id)}
+ if(![...tiles.keys()].some(k=>k.endsWith(':screen'))){focus.replaceChildren();const p=document.createElement('div');p.className='placeholder';p.textContent='Waiting for tutor screen share';focus.append(p)}
+}
+room.on(RoomEvent.TrackSubscribed,addTrack);
+room.on(RoomEvent.TrackUnsubscribed,removeTrack);
+room.on(RoomEvent.ParticipantConnected,drawAttendance);
+room.on(RoomEvent.ParticipantDisconnected,p=>{for(const key of [...tiles.keys()])if(key.startsWith(p.sid+':')){tiles.get(key)?.remove();tiles.delete(key)}drawAttendance()});
+room.on(RoomEvent.Disconnected,()=>{console.log('END_RECORDING')});
+try{
+ if(!livekitUrl||!token)throw new Error('Missing recorder connection details');
+ await room.connect(livekitUrl,token);
+ for(const p of room.remoteParticipants.values())for(const pub of p.trackPublications.values())if(pub.track)addTrack(pub.track,pub,p);
+ drawAttendance();
+ EgressHelper.setRoom(room);
+ EgressHelper.startRecording();
+ status.textContent='Recording connected';
+ console.log('START_RECORDING');
+}catch(error){status.textContent='Recording connection failed';console.error(error)}
+</script>
+</body>
+</html>
