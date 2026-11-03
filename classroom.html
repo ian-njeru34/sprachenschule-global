@@ -420,22 +420,27 @@ function isAuthorizedPresenter(participant){
 }
 
 async function updateClassPresence(joined){
- if(!sb||!currentRoom)return;
-
+ if(!sb||!currentRoom||!currentClassId)return;
  try{
-   await sb.rpc('class_presence_heartbeat',{
-     p_room_name:currentRoom,
-     p_joined:joined
+   const {data:{session}}=await sb.auth.getSession();
+   if(!session)return;
+   const response=await fetch('/api/livekit-presence',{
+     method:'POST',
+     headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+     body:JSON.stringify({roomName:currentRoom,classId:currentClassId,joined})
    });
+   const result=await response.json().catch(()=>({}));
+   if(!response.ok)throw new Error(result.error||'Classroom microphone permissions could not be refreshed.');
  }catch(error){
    console.warn('Class presence update failed',error);
+   if(joined)setStatus('Connected, but classroom audio permissions are still synchronizing. '+(error.message||''),'error');
  }
 }
 
 function startPresenceHeartbeat(){
  if(presenceTimer)clearInterval(presenceTimer);
  updateClassPresence(true);
- presenceTimer=setInterval(()=>updateClassPresence(true),20000);
+ presenceTimer=setInterval(()=>updateClassPresence(true),15000);
 }
 
 async function stopPresenceHeartbeat(){
