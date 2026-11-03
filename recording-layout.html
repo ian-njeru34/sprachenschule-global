@@ -86,6 +86,7 @@ try{
  for(const p of room.remoteParticipants.values())for(const pub of p.trackPublications.values())if(pub.track)addTrack(pub.track,pub,p);
  drawAttendance();
  EgressHelper.setRoom(room);
+ EgressHelper.startRecording();
  status.textContent='Recording connected';
  console.log('START_RECORDING');
 }catch(error){status.textContent='Recording connection failed';console.error(error)}
