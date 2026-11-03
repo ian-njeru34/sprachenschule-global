@@ -220,6 +220,7 @@
 
    <div class="controls">
     <button class="control-btn" id="micBtn" type="button" aria-label="Mute microphone" title="Mute microphone"><span class="control-icon" aria-hidden="true">🎙</span></button>
+    <button class="control-btn hidden" id="enableAudioBtn" type="button" aria-label="Enable classroom audio" title="Enable classroom audio"><span class="control-icon" aria-hidden="true">🔊</span></button>
     <button class="control-btn" id="camBtn" type="button" aria-label="Turn camera off" title="Turn camera off"><span class="control-icon" aria-hidden="true">📹</span></button>
     <button class="control-btn" id="shareBtn" type="button" aria-label="Share screen" title="Share screen"><span class="control-icon" aria-hidden="true">▣</span></button>
     <button class="control-btn hidden" id="muteAllBtn" type="button" aria-label="Mute all students" title="Mute all students (tutor only)"><span class="control-icon" aria-hidden="true">🔇</span></button>
@@ -812,6 +813,14 @@ async function joinRoom(event){
      dynacast:true
    });
 
+   room.on(RoomEvent.AudioPlaybackStatusChanged,()=>{
+     const blocked=Boolean(room&&!room.canPlaybackAudio);
+     $('enableAudioBtn').classList.toggle('hidden',!blocked);
+     if(blocked){
+       setStatus('Your browser is blocking classroom audio. Select the speaker button to enable sound.','error');
+     }
+   });
+
    room.on(RoomEvent.TrackSubscribed,(track,publication,participant)=>{
      if(track.kind===Track.Kind.Video){
        makeTile(
@@ -952,14 +961,19 @@ async function joinRoom(event){
      displayName
    );
 
+   let microphoneReady=false;
    try{
      await room.localParticipant.setMicrophoneEnabled(true);
+     microphoneReady=true;
+   }catch(error){
+     setStatus('Your microphone could not be started. Check browser microphone permission and use the microphone button to retry.','error');
+     addChat('Classroom','Microphone unavailable: '+(error.message||'browser permission or device error'));
+   }
+   try{
      await room.localParticipant.setCameraEnabled(true);
    }catch(error){
-     addChat(
-       'Classroom',
-       'Camera or microphone permission was not granted. Use the controls to try again.'
-     );
+     console.warn('Camera could not be started:',error);
+     addChat('Classroom','Camera unavailable. You can still participate with audio.');
    }
 
    for(const publication of room.localParticipant.videoTrackPublications.values()){
@@ -977,7 +991,11 @@ async function joinRoom(event){
    }
 
    refreshParticipants();
-   setStatus('Connected. You can now speak with your class.','ok');
+   if(microphoneReady){
+     setStatus('Connected. Your microphone is ready. If you cannot hear others, use the speaker button if it appears.','ok');
+   }else{
+     setStatus('Connected, but your microphone is not ready. Check browser permissions or select the microphone button to retry.','error');
+   }
 
  }catch(error){
    if(room){
@@ -1000,6 +1018,22 @@ async function joinRoom(event){
 }
 
 joinForm.addEventListener('submit',joinRoom);
+
+$('enableAudioBtn').addEventListener('click',async()=>{
+ if(!room)return;
+ const button=$('enableAudioBtn');
+ button.disabled=true;
+ try{
+   await room.startAudio();
+   button.classList.add('hidden');
+   setStatus('Classroom audio is enabled. You should now hear other participants.','ok');
+ }catch(error){
+   setStatus('Audio is still blocked. Check your browser sound settings, then try the speaker button again.','error');
+   console.warn('Could not resume LiveKit audio playback:',error);
+ }finally{
+   button.disabled=false;
+ }
+});
 
 $('micBtn').addEventListener('click',async()=>{
  if(!room)return;
