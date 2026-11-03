@@ -86,7 +86,11 @@ module.exports = async function handler(req, res) {
         // attendance strip, the tutor's shared screen, and participant cameras.
         // Materials shown in the tutor's browser are included when the tutor shares
         // the classroom browser tab; DOM-only content is not a LiveKit room track.
-        const recordingTemplateUrl = new URL('/recording-layout.html', process.env.APP_URL || 'https://www.sprachenschule.co.ke').toString();
+        // Prefer an explicitly configured public app URL, then Vercel's production
+        // domain. VERCEL_PROJECT_PRODUCTION_URL is provided without a scheme.
+        const configuredAppUrl = process.env.APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || 'www.sprachenschule.co.ke';
+        const appOrigin = /^https?:\\/\\//i.test(configuredAppUrl) ? configuredAppUrl : 'https://' + configuredAppUrl;
+        const recordingTemplateUrl = new URL('/recording-layout.html', appOrigin).toString();
         const started = await egress.startRoomCompositeEgress(
           cls.room_name,
           output,
