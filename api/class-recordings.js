@@ -87,10 +87,15 @@ module.exports = async function handler(req, res) {
         // Materials shown in the tutor's browser are included when the tutor shares
         // the classroom browser tab; DOM-only content is not a LiveKit room track.
         const recordingTemplateUrl = new URL('/recording-layout.html', process.env.APP_URL || 'https://www.sprachenschule.co.ke').toString();
-        const started = await egress.startRoomCompositeEgress(cls.room_name, output, {
-          layout: 'classroom',
-          customBaseUrl: recordingTemplateUrl
-        });
+        const started = await egress.startRoomCompositeEgress(
+          cls.room_name,
+          output,
+          'classroom',
+          undefined,
+          false,
+          false,
+          recordingTemplateUrl
+        );
         const egressId = started.egressId || started.egress_id;
         const { error:updateError } = await admin.from('class_recordings').update({ status:'live', egress_id:egressId, started_at:new Date().toISOString() }).eq('id',armed.id);
         if (updateError) { try { await egress.stopEgress(egressId); } catch (_) {} throw updateError; }
