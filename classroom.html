@@ -83,6 +83,13 @@
 .chat-form input{min-width:0;flex:1;padding:10px;border:1px solid #d7dfd7;border-radius:9px}
 .chat-form button{border:0;background:#173d35;color:white;border-radius:9px;padding:0 12px;font-weight:800}
 .participant-list{font-size:.9rem;color:#53645b}
+.attendance-strip{margin:0 0 12px;padding:10px 12px;border:1px solid #355149;border-radius:12px;background:#172824;color:#f2f7f3}
+.attendance-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:.82rem;margin-bottom:8px}
+.attendance-heading span{color:#b8d9c8;font-variant-numeric:tabular-nums}
+.attendance-list{display:flex;flex-wrap:wrap;gap:7px;max-height:76px;overflow:auto}
+.attendance-person{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:#294139;color:#f5fbf7;font-size:.76rem;white-space:nowrap}
+.attendance-person .attendance-dot{width:7px;height:7px;border-radius:50%;background:#65d69a;display:inline-block}
+.attendance-person .attendance-role{color:#b9d9ca;font-size:.68rem}
 .hint{font-size:.82rem;color:#65736b;margin-top:10px}
 .hidden{display:none!important}
 
@@ -221,6 +228,10 @@
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="live-pill">● Connected</span><a class="btn btn-outline" id="backDashboardBtn" href="dashboard.html">← Back to dashboard</a></div>
    </div>
 
+   <section class="attendance-strip" aria-label="Live class attendance">
+    <div class="attendance-heading"><strong>Attendance</strong><span id="attendanceCount">0 present</span></div>
+    <div id="attendanceList" class="attendance-list" aria-live="polite"><span class="attendance-person">Waiting for participants…</span></div>
+   </section>
    <div id="videoGrid" class="video-grid"></div>
 
    <div class="controls">
@@ -384,7 +395,28 @@ function removeTile(id){
 function refreshParticipants(){
  if(!room)return;
  const all=[room.localParticipant,...room.remoteParticipants.values()];
- $('participants').textContent=all.map(p=>participantLabel(p)).join(' · ');
+ const count=$('attendanceCount');
+ const list=$('attendanceList');
+ if(count)count.textContent=all.length+' present';
+ if(list){
+   list.replaceChildren();
+   all.forEach((participant,index)=>{
+     const item=document.createElement('span');
+     item.className='attendance-person';
+     const dot=document.createElement('span');dot.className='attendance-dot';dot.setAttribute('aria-hidden','true');
+     const name=document.createElement('span');name.textContent=participantLabel(participant)+(participant===room.localParticipant?' (You)':'');
+     const role=document.createElement('span');role.className='attendance-role';
+     let participantRole=participant===room.localParticipant?currentRole:'student';
+     try{
+       const metadata=JSON.parse(participant.metadata||'{}');
+       if(['teacher','tutor'].includes(String(metadata.role||'').toLowerCase()))participantRole='tutor';
+     }catch{}
+     role.textContent=participantRole==='teacher'||participantRole==='tutor'?'Tutor':'Student';
+     item.append(dot,name,role);list.append(item);
+   });
+ }
+ const sideList=$('participants');
+ if(sideList)sideList.textContent=all.map(p=>participantLabel(p)).join(' · ');
 }
 
 function renderPublished(participant){
@@ -922,6 +954,7 @@ async function joinRoom(event){
    });
 
    await room.connect(payload.url,payload.token);
+   refreshParticipants();
 
    currentName=displayName;
    currentRoom=roomName;
