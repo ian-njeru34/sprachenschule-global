@@ -1,5 +1,4 @@
 const { createClient } = require('@supabase/supabase-js');
-const { EgressClient, StreamOutput, StreamProtocol } = require('livekit-server-sdk');
 const { env, encrypt, decrypt, supabaseAdmin, getYouTubeAccessToken, youtubeRequest } = require('../lib/youtube');
 
 module.exports = async function handler(req, res) {
@@ -78,6 +77,7 @@ module.exports = async function handler(req, res) {
       if (targetError || !target?.encrypted_ingest_url) throw new Error('The secure YouTube stream target is missing. Ask the registrar to arm the stream again.');
       await admin.from('class_recordings').update({ status:'starting' }).eq('id',armed.id);
       try {
+        const { EgressClient, StreamOutput, StreamProtocol } = require('livekit-server-sdk');
         const egressUrl = decrypt(target.encrypted_ingest_url);
         const base = process.env.LIVEKIT_URL.replace(/^wss:/i,'https:').replace(/^ws:/i,'http:');
         const egress = new EgressClient(base, process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET);
