@@ -1140,7 +1140,9 @@ $('shareBtn').addEventListener('click',async()=>{
  const nextState=!sharing;
 
  try{
-   await room.localParticipant.setScreenShareEnabled(nextState);
+   // Request tab/system audio with the screen share. In Chrome, the tutor should
+    // choose the classroom browser tab and enable “Share tab audio” when offered.
+    await room.localParticipant.setScreenShareEnabled(nextState, nextState ? { audio: true } : undefined);
    sharing=nextState;
 
    $('shareBtn').innerHTML=`<span class="control-icon" aria-hidden="true">${sharing?'▣':'▧'}</span>`;
