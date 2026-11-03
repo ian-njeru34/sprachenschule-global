@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sprachenschule Facebook Token Setup</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 680px; margin: 40px auto; padding: 20px; color: #222; }
+    input, button { box-sizing: border-box; width: 100%; padding: 12px; margin: 8px 0; }
+    button { cursor: pointer; background: #1877f2; color: white; border: 0; border-radius: 5px; }
+    #result { white-space: pre-wrap; overflow-wrap: anywhere; background: #f2f2f2; padding: 12px; }
+  </style>
+</head>
+<body>
+  <h2>Sprachenschule Facebook Page Connection</h2>
+  <p>Sign in to your Sprachenschule registrar account before using this page.</p>
+
+  <label for="token">Fresh Facebook User Access Token</label>
+  <input id="token" type="password" autocomplete="off" placeholder="Paste your token here">
+
+  <button id="exchange">Generate Page Access Token</button>
+  <p id="status"></p>
+  <div id="result"></div>
+  <button id="copy" hidden>Copy Page Token</button>
+
+  <script src="/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    (async () => {
+      const status = document.getElementById("status");
+      const result = document.getElementById("result");
+      const exchange = document.getElementById("exchange");
+      const copy = document.getElementById("copy");
+      let pageToken = "";
+
+      if (!window.SUPABASE_URL || !window.SUPABASE_ANON_KEY) {
+        status.textContent = "Supabase configuration was not found.";
+        exchange.disabled = true;
+        return;
+      }
+
+      const sb = window.supabase.createClient(
+        window.SUPABASE_URL,
+        window.SUPABASE_ANON_KEY
+      );
+
+      const { data: { session }, error } = await sb.auth.getSession();
+      if (error || !session) {
+        status.textContent = "Please sign in to your registrar account first, then reload this page.";
+        exchange.disabled = true;
+        return;
+      }
+
+      const { data: registrar } = await sb
+        .from("registrars")
+        .select("user_id")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      const { data: profile } = await sb
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      if (!registrar && !["registrar", "admin"].includes(profile?.role)) {
+        status.textContent = "Access denied. A registrar or administrator account is required.";
+        exchange.disabled = true;
+        return;
+      }
+
+      status.textContent = "Signed in and authorised. You can now exchange your token.";
+
+      exchange.addEventListener("click", async () => {
+        const userToken = document.getElementById("token").value.trim();
+        if (!userToken) {
+          status.textContent = "Please paste your Facebook User Access Token.";
+          return;
+        }
+
+        exchange.disabled = true;
+        copy.hidden = true;
+        result.textContent = "";
+        status.textContent = "Exchanging token securely. Please wait...";
+
+        try {
+          const response = await fetch("/api/meta-token-exchange", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + session.access_token
+            },
+            body: JSON.stringify({ user_access_token: userToken })
+          });
+
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "Token exchange failed.");
+
+          pageToken = data.page_access_token || "";
+          if (!pageToken) throw new Error("Meta did not return a Page token.");
+
+          result.textContent = "Page: " + (data.page_name || "Sprachenschule") +
+            "\nPage ID: " + (data.page_id || "") +
+            "\n\nYour Page Access Token:\n" + pageToken;
+
+          status.textContent = "Success. Copy the Page token and save it in Vercel as META_PAGE_ACCESS_TOKEN.";
+          copy.hidden = false;
+          document.getElementById("token").value = "";
+        } catch (err) {
+          status.textContent = "Error: " + err.message;
+        } finally {
+          exchange.disabled = false;
+        }
+      });
+
+      copy.addEventListener("click", async () => {
+        if (!pageToken) return;
+        await navigator.clipboard.writeText(pageToken);
+        status.textContent = "Page token copied. Keep it private.";
+      });
+    })();
+  </script>
+</body>
+</html>
