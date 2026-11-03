@@ -100,6 +100,23 @@ module.exports = async function handler(req, res) {
       if (!enrolment) return res.status(403).json({ error: 'You are not enrolled in this class. Please contact the registrar.' });
     }
 
+    // Student microphone publishing is enabled only while the assigned tutor
+    // has a fresh presence heartbeat. A student joining first can still listen.
+    let assignedTutorPresent = false;
+    if (!isTeacher && scheduledClass.teacher_id) {
+      const { data: tutorPresence, error: presenceError } = await admin
+        .from('class_presence').select('last_seen_at')
+        .eq('class_id', scheduledClass.id)
+        .eq('user_id', scheduledClass.teacher_id)
+        .gte('last_seen_at', new Date(Date.now() - 45000).toISOString())
+        .maybeSingle();
+      if (presenceError) {
+        console.error('Tutor presence lookup failed:', presenceError.message);
+        return res.status(503).json({ error: 'Could not verify whether your tutor is present. Please try again.' });
+      }
+      assignedTutorPresent = Boolean(tutorPresence);
+    }
+
     const identity = user.id;
     const token = new AccessToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
       identity,
@@ -110,7 +127,7 @@ module.exports = async function handler(req, res) {
     token.addGrant({
       roomJoin: true,
       room: roomName,
-      canPublish: true,
+      canPublish: isTeacher || assignedTutorPresent,
       canSubscribe: true,
       canPublishData: true,
     });
