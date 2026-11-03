@@ -82,7 +82,15 @@ module.exports = async function handler(req, res) {
         const base = process.env.LIVEKIT_URL.replace(/^wss:/i,'https:').replace(/^ws:/i,'http:');
         const egress = new EgressClient(base, process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET);
         const output = new StreamOutput({ protocol:StreamProtocol.RTMP, urls:[egressUrl] });
-        const started = await egress.startRoomCompositeEgress(cls.room_name, output, 'speaker');
+        // Use the school's custom recorder view so the broadcast includes a live
+        // attendance strip, the tutor's shared screen, and participant cameras.
+        // Materials shown in the tutor's browser are included when the tutor shares
+        // the classroom browser tab; DOM-only content is not a LiveKit room track.
+        const recordingTemplateUrl = new URL('/recording-layout.html', process.env.APP_URL || 'https://www.sprachenschule.co.ke').toString();
+        const started = await egress.startRoomCompositeEgress(cls.room_name, output, {
+          layout: 'classroom',
+          customBaseUrl: recordingTemplateUrl
+        });
         const egressId = started.egressId || started.egress_id;
         const { error:updateError } = await admin.from('class_recordings').update({ status:'live', egress_id:egressId, started_at:new Date().toISOString() }).eq('id',armed.id);
         if (updateError) { try { await egress.stopEgress(egressId); } catch (_) {} throw updateError; }
