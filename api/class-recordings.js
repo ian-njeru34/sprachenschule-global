@@ -89,7 +89,7 @@ module.exports = async function handler(req, res) {
         // Prefer an explicitly configured public app URL, then Vercel's production
         // domain. VERCEL_PROJECT_PRODUCTION_URL is provided without a scheme.
         const configuredAppUrl = process.env.APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || 'www.sprachenschule.co.ke';
-        const appOrigin = /^https?:\\/\\//i.test(configuredAppUrl) ? configuredAppUrl : 'https://' + configuredAppUrl;
+        const appOrigin = configuredAppUrl.startsWith('http://') || configuredAppUrl.startsWith('https://') ? configuredAppUrl : 'https://' + configuredAppUrl;
         const recordingTemplateUrl = new URL('/recording-layout.html', appOrigin).toString();
         const started = await egress.startRoomCompositeEgress(
           cls.room_name,
@@ -114,6 +114,8 @@ module.exports = async function handler(req, res) {
       if (!['tutor','teacher'].includes(role) || cls.teacher_id !== user.id) return res.status(403).json({ error: 'Only the assigned tutor can stop the YouTube stream.' });
       const { data: active } = await admin.from('class_recordings').select('*').eq('class_id',classId).eq('status','live').order('created_at',{ascending:false}).limit(1).maybeSingle();
       if (!active) return res.status(200).json({ ok:true, message:'No active YouTube stream.' });
+      if (!process.env.LIVEKIT_URL || !process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET) return res.status(503).json({ error: 'LiveKit Egress is not configured.' });
+      const { EgressClient } = require('livekit-server-sdk');
       const base = process.env.LIVEKIT_URL.replace(/^wss:/i,'https:').replace(/^ws:/i,'http:');
       const egress = new EgressClient(base,process.env.LIVEKIT_API_KEY,process.env.LIVEKIT_API_SECRET);
       await egress.stopEgress(active.egress_id);
