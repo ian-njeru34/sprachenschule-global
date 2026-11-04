@@ -82,12 +82,14 @@ room.on(RoomEvent.Disconnected,()=>{console.log('END_RECORDING')});
 try{
  if(!livekitUrl||!token)throw new Error('Missing recorder connection details');
  await room.connect(livekitUrl,token);
+ // Signal Egress as soon as the recorder has successfully joined the room.
+ // Rendering existing tracks happens afterwards so a display error cannot
+ // prevent the required START_RECORDING signal.
+ status.textContent='Connected; preparing classroom view';
+ console.log('START_RECORDING');
  for(const p of room.remoteParticipants.values())for(const pub of p.trackPublications.values())if(pub.track)addTrack(pub.track,pub,p);
  drawAttendance();
- // Signal readiness directly to LiveKit Egress. This avoids relying on the
- // separately hosted @livekit/egress-sdk module to emit the start signal.
  status.textContent='Recording connected';
- console.log('START_RECORDING');
 }catch(error){status.textContent='Recording connection failed';console.error(error)}
 </script>
 </body>
