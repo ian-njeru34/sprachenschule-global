@@ -75,7 +75,8 @@ module.exports = async function handler(req, res) {
       if (!process.env.LIVEKIT_URL || !process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET) return res.status(503).json({ error: 'LiveKit Egress is not configured. The classroom can continue without YouTube streaming.' });
       const { data: target, error: targetError } = await admin.from('youtube_live_targets').select('encrypted_ingest_url').eq('recording_id',armed.id).maybeSingle();
       if (targetError || !target?.encrypted_ingest_url) throw new Error('The secure YouTube stream target is missing. Ask the registrar to arm the stream again.');
-      await admin.from('class_recordings').update({ status:'starting' }).eq('id',armed.id);
+      const tutorFirstJoinAt = new Date().toISOString();
+      await admin.from('class_recordings').update({ status:'starting', started_at:tutorFirstJoinAt }).eq('id',armed.id);
       try {
         const { EgressClient, StreamOutput, StreamProtocol } = require('livekit-server-sdk');
         const egressUrl = decrypt(target.encrypted_ingest_url);
@@ -101,7 +102,7 @@ module.exports = async function handler(req, res) {
           recordingTemplateUrl
         );
         const egressId = started.egressId || started.egress_id;
-        const { error:updateError } = await admin.from('class_recordings').update({ status:'live', egress_id:egressId, started_at:new Date().toISOString() }).eq('id',armed.id);
+        const { error:updateError } = await admin.from('class_recordings').update({ status:'live', egress_id:egressId }).eq('id',armed.id);
         if (updateError) { try { await egress.stopEgress(egressId); } catch (_) {} throw updateError; }
         return res.status(200).json({ ok:true, recordingId:armed.id, egressId, watchUrl:armed.youtube_watch_url });
       } catch (error) {
