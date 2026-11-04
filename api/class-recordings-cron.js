@@ -10,24 +10,19 @@ module.exports = async function handler(req, res) {
   try {
     const admin = supabaseAdmin();
     const { data: recordings, error } = await admin.from('class_recordings')
-      .select('id,class_id,egress_id').eq('status', 'live');
+      .select('id,class_id,egress_id,started_at').eq('status', 'live');
     if (error) throw error;
     if (!recordings?.length) return res.status(200).json({ ok: true, stopped: 0 });
-    const classIds = [...new Set(recordings.map(r => r.class_id).filter(Boolean))];
-    const { data: classes, error: classError } = await admin.from('scheduled_classes')
-      .select('id,starts_at,duration_minutes').in('id', classIds);
-    if (classError) throw classError;
-    const byId = new Map((classes || []).map(c => [String(c.id), c]));
     const base = String(process.env.LIVEKIT_URL || '').replace(/^wss:/i, 'https:').replace(/^ws:/i, 'http:');
     if (!base || !process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET) throw new Error('LiveKit Egress is not configured.');
     const egress = new EgressClient(base, process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET);
     let stopped = 0;
     const errors = [];
     for (const recording of recordings) {
-      const cls = byId.get(String(recording.class_id));
-      const duration = Number(cls?.duration_minutes);
-      if (!cls?.starts_at || !Number.isFinite(duration) || duration <= 0) continue;
-      const endAt = new Date(cls.starts_at).getTime() + duration * 60000;
+      // The recording clock starts when the tutor first joins and the
+      // server receives start-on-live. Rejoins must never reset this timestamp.
+      if (!recording.started_at) continue;
+      const endAt = new Date(recording.started_at).getTime() + 85 * 60 * 1000;
       if (!Number.isFinite(endAt) || Date.now() < endAt) continue;
       try {
         if (recording.egress_id) await egress.stopEgress(recording.egress_id);
