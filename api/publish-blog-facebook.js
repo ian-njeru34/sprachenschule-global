@@ -2,7 +2,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 const PAGE_ID = '1106362315902155';
 const GRAPH_VERSION = 'v24.0';
-const SITE_ORIGIN = 'https://www.sprachenschule.co.ke';
+const SITE_ORIGIN = 'https://sprachenschule.co.ke';
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, private');
@@ -66,12 +66,26 @@ module.exports = async function handler(req, res) {
     if (claim.error) return res.status(503).json({ error: 'Could not reserve this article for Facebook publishing.' });
     if (!claim.data) return res.status(200).json({ success: true, status: 'already_posted_or_in_progress' });
 
-    const articleUrl = SITE_ORIGIN + '/blog.html?slug=' + encodeURIComponent(post.slug);
+    const articleUrl = SITE_ORIGIN + '/blog?slug=' + encodeURIComponent(post.slug);
     const message = [post.title, post.excerpt, articleUrl].filter(Boolean).join('\n\n');
-    const endpoint = post.image_url ? 'photos' : 'feed';
+
+    // Only use the Page photo endpoint for a URL that actually serves an image.
+    // A homepage or ordinary webpage URL in the featured-image field must use a link post.
+    let usePhoto = false;
+    if (post.image_url) {
+      try {
+        const imageCheck = await fetch(post.image_url, { method: 'HEAD', redirect: 'follow' });
+        const contentType = imageCheck.headers.get('content-type') || '';
+        usePhoto = imageCheck.ok && contentType.toLowerCase().startsWith('image/');
+      } catch (_) {
+        usePhoto = false;
+      }
+    }
+
+    const endpoint = usePhoto ? 'photos' : 'feed';
     const graphUrl = new URL('https://graph.facebook.com/' + GRAPH_VERSION + '/' + PAGE_ID + '/' + endpoint);
     const params = new URLSearchParams({ access_token: META_PAGE_ACCESS_TOKEN });
-    if (post.image_url) {
+    if (usePhoto) {
       params.set('url', post.image_url);
       params.set('caption', message);
     } else {
@@ -97,7 +111,8 @@ module.exports = async function handler(req, res) {
     }
 
     if (!graphResponse.ok || !graphData.id) {
-      const safeError = graphData.error?.message || 'Meta rejected the Facebook post.';
+      const metaError = graphData.error || {};
+      const safeError = (metaError.message || 'Meta rejected the Facebook post.') + (metaError.code ? ' (Meta code ' + metaError.code + (metaError.error_subcode ? ', subcode ' + metaError.error_subcode : '') + ')' : '');
       await admin.from('blog_posts').update({
         facebook_post_status: 'failed',
         facebook_post_error: safeError.slice(0, 1000)
