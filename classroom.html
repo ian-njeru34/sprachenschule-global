@@ -537,10 +537,8 @@ async function loadClassMaterials(){
        await displayMaterial(button.dataset.presentMaterial,true);
 
        if(activeMaterialId===button.dataset.presentMaterial){
-         await sendClassEvent({
-           type:'material-open',
-           id:button.dataset.presentMaterial
-         });
+         const presentation=await getRecordingPresentation(button.dataset.presentMaterial);
+          await sendClassEvent({type:'material-open',id:button.dataset.presentMaterial,...(presentation||{})});
        }
      }finally{
        button.disabled=false;
@@ -676,6 +674,15 @@ async function fitPdfWidth(leader){
  await setPdfZoom(Math.max(.5,Math.min(2.5,width/base.width)),leader);
 }
 
+async function getRecordingPresentation(id){
+ try{
+  const {data:m,error}=await sb.from('class_materials').select('id,class_id,title,material_type,storage_path').eq('id',id).is('deleted_at',null).maybeSingle();
+  if(error||!m||String(m.class_id)!==String(currentClassId))return null;
+  const {data:link,error:linkError}=await sb.storage.from('class-materials').createSignedUrl(m.storage_path,3600);
+  if(linkError||!link?.signedUrl)return null;
+  return {url:link.signedUrl,title:m.title||'Class presentation',material_type:m.material_type||'note',storage_path:m.storage_path||''};
+ }catch(error){console.warn('Recording presentation link could not be prepared.',error);return null;}
+}
 async function displayMaterial(id,leader,viewState=null){
  if(!currentClassId||!room)return;
  const {data:m,error}=await sb.from('class_materials')
@@ -990,10 +997,8 @@ async function joinRoom(event){
        await displayMaterial(wanted,true);
 
        if(activeMaterialId===wanted){
-         await sendClassEvent({
-           type:'material-open',
-           id:wanted
-         });
+         const presentation=await getRecordingPresentation(wanted);
+          await sendClassEvent({type:'material-open',id:wanted,...(presentation||{})});
        }
      }else{
        setStatus('Only the authorized tutor or school staff can present materials.','error');
