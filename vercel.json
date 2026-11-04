@@ -56,5 +56,11 @@
       "source": "/admin",
       "destination": "/admin.html"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/class-recordings-cron",
+      "schedule": "* * * * *"
+    }
   ]
 }
