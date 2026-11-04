@@ -40,6 +40,7 @@ const attendance=document.getElementById('attendance');
 const count=document.getElementById('count');
 const status=document.getElementById('status');
 let room;
+let Track;
 function reportDiagnostic(event,detail=''){
  try{fetch('/api/recording-diagnostics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event,detail:String(detail).slice(0,700),room:new URLSearchParams(location.search).get('room')||''}),keepalive:true}).catch(()=>{});}catch{}
 }
@@ -81,7 +82,8 @@ function removeTrack(track,publication,participant){
 
 try{
  reportDiagnostic('module_import_start');
- const {Room,RoomEvent,Track}=await import('https://esm.sh/livekit-client@2.15.5');
+ const {Room,RoomEvent,Track:LiveKitTrack}=await import('https://esm.sh/livekit-client@2.15.5');
+ Track=LiveKitTrack;
  reportDiagnostic('module_import_success');
  room=new Room({adaptiveStream:true,dynacast:false});
  room.on(RoomEvent.TrackSubscribed,addTrack);
