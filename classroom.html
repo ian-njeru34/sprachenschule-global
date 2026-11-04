@@ -1192,7 +1192,7 @@ $('muteAllBtn').addEventListener('click',async()=>{
 $('backDashboardBtn').addEventListener('click',async(event)=>{
  event.preventDefault();
  const destination=dashboardReturnUrl;
- await notifyRecording('stop');
+ // Intentionally keep the same YouTube broadcast running across temporary departures.
  await stopPresenceHeartbeat();
  if(room){try{await room.disconnect();}catch{} room=null;}
  if(materialRefreshTimer){clearInterval(materialRefreshTimer);materialRefreshTimer=null;}
@@ -1200,7 +1200,7 @@ $('backDashboardBtn').addEventListener('click',async(event)=>{
 });
 
 $('leaveBtn').addEventListener('click',async()=>{
- await notifyRecording('stop');
+ // Intentionally keep the same YouTube broadcast running across temporary departures.
  await stopPresenceHeartbeat();
 
  if(room){
