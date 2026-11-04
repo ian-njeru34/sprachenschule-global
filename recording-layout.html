@@ -15,6 +15,7 @@ header{display:flex;justify-content:space-between;align-items:center;padding:10p
 #stage{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,4fr) minmax(190px,1fr);gap:12px}
 #focus{min-width:0;min-height:0;display:flex;align-items:center;justify-content:center;background:#263632;border-radius:14px;overflow:hidden;position:relative}
 #focus video{width:100%;height:100%;object-fit:contain;background:#080d0c}
+#focus .presentation-frame{width:100%;height:100%;border:0;background:#fff}#focus .presentation-media{width:100%;height:100%;object-fit:contain;background:#080d0c}#focus .presentation-image{max-width:100%;max-height:100%;object-fit:contain;background:#fff}#focus .presentation-heading{position:absolute;z-index:2;top:0;left:0;right:0;padding:8px 12px;background:#172824dd;color:#fff;font-size:14px;pointer-events:none}
 #focus .placeholder{color:#b8d9c8;font-size:22px}
 #side{min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:10px}
 .tile{position:relative;min-height:110px;flex:1;background:#263632;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center}
@@ -56,6 +57,25 @@ function drawAttendance(){
  attendance.replaceChildren();
  people.forEach(p=>{const el=document.createElement('span');el.className='person';el.textContent=label(p);const r=document.createElement('small');r.textContent=role(p);el.append(r);attendance.append(el)});
 }
+let activePresentation=null;
+function showPresentation(message){
+ activePresentation={id:message.id,url:message.url,title:message.title||'Class presentation',type:message.material_type||'note',path:message.storage_path||''};
+ focus.replaceChildren();
+ const heading=document.createElement('div');heading.className='presentation-heading';heading.textContent=activePresentation.title;focus.append(heading);
+ const path=activePresentation.path.toLowerCase().split('?')[0];
+ let view;
+ if(activePresentation.type==='video'||activePresentation.type==='audio'){
+  view=document.createElement(activePresentation.type);view.className='presentation-media';view.src=activePresentation.url;view.autoplay=false;view.controls=false;view.playsInline=true;
+  if(activePresentation.type==='audio'){view.style.width='80%';view.style.height='70px';view.style.background='#fff';}
+ }else if(/\.(png|jpe?g|gif|webp|svg)$/i.test(path)){
+  view=document.createElement('img');view.className='presentation-image';view.src=activePresentation.url;view.alt=activePresentation.title;
+ }else{
+  view=document.createElement('iframe');view.className='presentation-frame';view.title=activePresentation.title;view.src=activePresentation.url+'#toolbar=0&navpanes=0&view=FitH&page=1';view.setAttribute('allow','autoplay; fullscreen');
+ }
+ focus.append(view);
+ status.textContent='Class presentation: '+activePresentation.title;
+ reportDiagnostic('presentation_rendered',activePresentation.type+' '+activePresentation.title);
+}
 function addTrack(track,publication,participant){
  if(track.kind===Track.Kind.Audio){const el=track.attach();el.autoplay=true;el.style.display='none';document.body.append(el);return}
  if(track.kind!==Track.Kind.Video)return;
@@ -87,6 +107,26 @@ try{
  reportDiagnostic('module_import_success');
  room=new Room({adaptiveStream:true,dynacast:false});
  room.on(RoomEvent.TrackSubscribed,addTrack);
+room.on(RoomEvent.DataReceived,(data,participant)=>{
+ try{
+  const message=JSON.parse(new TextDecoder().decode(data));
+  let metadata={};try{metadata=JSON.parse(participant?.metadata||'{}')}catch{}
+  if(!['teacher','tutor'].includes(String(metadata.role||'').toLowerCase()))return;
+  if(message.type==='material-open'&&message.url&&message.id){showPresentation(message);return;}
+  if(message.type==='pdf-view'&&message.id===activePresentation?.id){
+   const frame=focus.querySelector('iframe.presentation-frame');
+   if(frame&&activePresentation?.url)frame.src=activePresentation.url+'#toolbar=0&navpanes=0&view=FitH&page='+Math.max(1,Number(message.page)||1);
+   return;
+  }
+  if(message.type==='material-control'&&message.id===activePresentation?.id){
+   const media=focus.querySelector('video.presentation-media,audio.presentation-media');
+   if(!media)return;
+   if(Number.isFinite(message.time)&&Math.abs(media.currentTime-message.time)>.8)media.currentTime=message.time;
+   if(message.action==='play')media.play().catch(()=>{});
+   if(message.action==='pause')media.pause();
+  }
+ }catch(error){reportDiagnostic('presentation_event_error',error?.message||error)}
+});
 room.on(RoomEvent.TrackUnsubscribed,removeTrack);
 room.on(RoomEvent.ParticipantConnected,drawAttendance);
 room.on(RoomEvent.ParticipantDisconnected,p=>{for(const key of [...tiles.keys()])if(key.startsWith(p.sid+':')){tiles.get(key)?.remove();tiles.delete(key)}drawAttendance()});
