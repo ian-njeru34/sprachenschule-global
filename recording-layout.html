@@ -31,8 +31,6 @@ header{display:flex;justify-content:space-between;align-items:center;padding:10p
 <div id="status">Private class recording</div>
 </div>
 <script type="module">
-import {Room,RoomEvent,Track,TrackKind} from 'https://esm.sh/livekit-client@2.15.5';
-
 const params=new URLSearchParams(location.search);
 const livekitUrl=params.get('url');
 const token=params.get('token');
@@ -41,7 +39,13 @@ const side=document.getElementById('side');
 const attendance=document.getElementById('attendance');
 const count=document.getElementById('count');
 const status=document.getElementById('status');
-const room=new Room({adaptiveStream:true,dynacast:false});
+let room;
+function reportDiagnostic(event,detail=''){
+ try{fetch('/api/recording-diagnostics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event,detail:String(detail).slice(0,700),room:new URLSearchParams(location.search).get('room')||''}),keepalive:true}).catch(()=>{});}catch{}
+}
+window.addEventListener('error',e=>reportDiagnostic('window_error',e.message||'Script error'));
+window.addEventListener('unhandledrejection',e=>reportDiagnostic('unhandled_rejection',e.reason?.stack||e.reason?.message||String(e.reason)));
+reportDiagnostic('page_loaded',location.pathname);
 const tiles=new Map();
 const label=p=>p.name||p.identity||'Participant';
 function role(p){try{const m=JSON.parse(p.metadata||'{}');return ['teacher','tutor'].includes(String(m.role||'').toLowerCase())?'Tutor':'Student'}catch{return 'Student'}}
@@ -74,23 +78,31 @@ function removeTrack(track,publication,participant){
  const tile=tiles.get(id);if(tile){tile.remove();tiles.delete(id)}
  if(![...tiles.keys()].some(k=>k.endsWith(':screen'))){focus.replaceChildren();const p=document.createElement('div');p.className='placeholder';p.textContent='Waiting for tutor screen share';focus.append(p)}
 }
-room.on(RoomEvent.TrackSubscribed,addTrack);
+
+try{
+ reportDiagnostic('module_import_start');
+ const {Room,RoomEvent,Track}=await import('https://esm.sh/livekit-client@2.15.5');
+ reportDiagnostic('module_import_success');
+ room=new Room({adaptiveStream:true,dynacast:false});
+ room.on(RoomEvent.TrackSubscribed,addTrack);
 room.on(RoomEvent.TrackUnsubscribed,removeTrack);
 room.on(RoomEvent.ParticipantConnected,drawAttendance);
 room.on(RoomEvent.ParticipantDisconnected,p=>{for(const key of [...tiles.keys()])if(key.startsWith(p.sid+':')){tiles.get(key)?.remove();tiles.delete(key)}drawAttendance()});
 room.on(RoomEvent.Disconnected,()=>{console.log('END_RECORDING')});
-try{
  if(!livekitUrl||!token)throw new Error('Missing recorder connection details');
+ reportDiagnostic('room_connect_start','LiveKit URL present; token present');
  await room.connect(livekitUrl,token);
+ reportDiagnostic('room_connect_success');
  // Signal Egress as soon as the recorder has successfully joined the room.
  // Rendering existing tracks happens afterwards so a display error cannot
  // prevent the required START_RECORDING signal.
  status.textContent='Connected; preparing classroom view';
  console.log('START_RECORDING');
+ reportDiagnostic('start_recording_signal_logged');
  for(const p of room.remoteParticipants.values())for(const pub of p.trackPublications.values())if(pub.track)addTrack(pub.track,pub,p);
  drawAttendance();
  status.textContent='Recording connected';
-}catch(error){status.textContent='Recording connection failed';console.error(error)}
+}catch(error){status.textContent='Recording connection failed';console.error(error);reportDiagnostic('startup_error',error?.stack||error?.message||String(error))}
 </script>
 </body>
 </html>
