@@ -87,7 +87,6 @@ module.exports = async function handler(req, res) {
     const appId = "1127812599647763";
 
     const exchangeUrl = new URL("https://graph.facebook.com/v24.0/oauth/access_token");
-    exchangeUrl.pathname = "/oauth/access_token";
     exchangeUrl.search = new URLSearchParams({
       grant_type: "fb_exchange_token",
       client_id: appId,
