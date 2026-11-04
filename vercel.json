@@ -1,12 +1,17 @@
 {
   "rewrites": [
-    {
-      "source": "/",
-      "destination": "/home.html"
-    },
-    {
-      "source": "/home",
-      "destination": "/home.html"
-    }
+    { "source": "/", "destination": "/home.html" },
+    { "source": "/home", "destination": "/home.html" },
+    { "source": "/about", "destination": "/about.html" },
+    { "source": "/blog", "destination": "/blog.html" },
+    { "source": "/courses", "destination": "/courses.html" },
+    { "source": "/learning-method", "destination": "/learning-method.html" },
+    { "source": "/germany-pathways", "destination": "/germany-pathways.html" },
+    { "source": "/faq", "destination": "/faq.html" },
+    { "source": "/admissions", "destination": "/admissions.html" },
+    { "source": "/contact", "destination": "/contact.html" },
+    { "source": "/login", "destination": "/school.html" },
+    { "source": "/library", "destination": "/shop.html" },
+    { "source": "/search", "destination": "/search.html" }
   ]
 }
