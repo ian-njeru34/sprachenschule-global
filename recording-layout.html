@@ -32,7 +32,6 @@ header{display:flex;justify-content:space-between;align-items:center;padding:10p
 </div>
 <script type="module">
 import {Room,RoomEvent,Track,TrackKind} from 'https://esm.sh/livekit-client@2.15.5';
-import EgressHelper from 'https://esm.sh/@livekit/egress-sdk';
 
 const params=new URLSearchParams(location.search);
 const livekitUrl=params.get('url');
@@ -85,8 +84,8 @@ try{
  await room.connect(livekitUrl,token);
  for(const p of room.remoteParticipants.values())for(const pub of p.trackPublications.values())if(pub.track)addTrack(pub.track,pub,p);
  drawAttendance();
- EgressHelper.setRoom(room);
- EgressHelper.startRecording();
+ // Signal readiness directly to LiveKit Egress. This avoids relying on the
+ // separately hosted @livekit/egress-sdk module to emit the start signal.
  status.textContent='Recording connected';
  console.log('START_RECORDING');
 }catch(error){status.textContent='Recording connection failed';console.error(error)}
