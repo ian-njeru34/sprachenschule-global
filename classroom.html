@@ -91,6 +91,10 @@
 .attendance-person .attendance-dot{width:7px;height:7px;border-radius:50%;background:#65d69a;display:inline-block}
 .attendance-person .attendance-role{color:#b9d9ca;font-size:.68rem}
 .hint{font-size:.82rem;color:#65736b;margin-top:10px}
+.tutor-volume-control{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center;padding:8px 12px 12px;color:#eaf2ed}
+.tutor-volume-control label{font-size:.84rem;font-weight:700}
+.tutor-volume-control input{width:min(240px,55vw);accent-color:#72c69d}
+.tutor-volume-value{font-size:.82rem;font-variant-numeric:tabular-nums;min-width:42px;text-align:right}
 .hidden{display:none!important}
 
 @media(max-width:850px){
@@ -242,6 +246,11 @@
     <button class="control-btn hidden" id="muteAllBtn" type="button" aria-label="Mute all students" title="Mute all students (tutor only)"><span class="control-icon" aria-hidden="true">🔇</span></button>
     <button class="control-btn danger" id="leaveBtn" type="button" aria-label="Leave classroom" title="Leave classroom"><span class="control-icon" aria-hidden="true">☎</span></button>
    </div>
+   <div class="tutor-volume-control hidden" id="tutorVolumeControl">
+    <label for="tutorVolumeSlider">Tutor's voice</label>
+    <input id="tutorVolumeSlider" type="range" min="50" max="150" step="5" value="100" aria-label="Tutor voice volume">
+    <span class="tutor-volume-value" id="tutorVolumeValue">100%</span>
+   </div>
   </div>
 
   <aside class="side-panel">
@@ -307,6 +316,34 @@ let pdfCurrentPage=1;
 let pdfRenderToken=0;
 let pdfSyncTimer=null;
 let pdfJsPromise=null;
+let tutorVolume=1,tutorAudioContext=null;
+const tutorAudioElements=new Set();
+const microphoneCaptureOptions={echoCancellation:true,noiseSuppression:true,autoGainControl:true};
+function isTutorParticipant(participant){
+ try{const metadata=JSON.parse(participant?.metadata||'{}');return ['teacher','tutor'].includes(String(metadata.role||'').toLowerCase());}
+ catch{return false;}
+}
+function updateTutorVolume(value){
+ tutorVolume=Math.max(.5,Math.min(1.5,Number(value)||1));
+ $('tutorVolumeValue').textContent=Math.round(tutorVolume*100)+'%';
+ for(const element of tutorAudioElements)if(element.__ssgGainNode&&tutorAudioContext)element.__ssgGainNode.gain.setTargetAtTime(tutorVolume,tutorAudioContext.currentTime,.025);
+}
+async function routeTutorAudioThroughGain(element){
+ try{
+  const AudioContextClass=window.AudioContext||window.webkitAudioContext;if(!AudioContextClass)return;
+  if(!tutorAudioContext)tutorAudioContext=new AudioContextClass();
+  const source=tutorAudioContext.createMediaElementSource(element),gain=tutorAudioContext.createGain();
+  gain.gain.value=tutorVolume;source.connect(gain);gain.connect(tutorAudioContext.destination);
+  element.__ssgAudioSource=source;element.__ssgGainNode=gain;tutorAudioElements.add(element);
+  if(tutorAudioContext.state==='suspended')await tutorAudioContext.resume().catch(()=>{});
+ }catch(error){console.warn('Tutor audio boost unavailable; using normal playback.',error);}
+}
+function clearTutorAudioElement(element){
+ tutorAudioElements.delete(element);try{element.__ssgAudioSource?.disconnect();}catch{}try{element.__ssgGainNode?.disconnect();}catch{}element.remove();
+}
+async function closeTutorAudioContext(){
+ tutorAudioElements.clear();if(tutorAudioContext){try{await tutorAudioContext.close();}catch{}tutorAudioContext=null;}
+}
 
 if(
  window.SUPABASE_URL&&
@@ -853,6 +890,8 @@ async function joinRoom(event){
    $('backDashboardBtn').textContent=currentRole==='teacher'?'← Back to tutor dashboard':'← Back to student dashboard';
    $('muteAllBtn').classList.toggle('hidden',currentRole!=='teacher');
    $('shareBtn').classList.toggle('hidden',currentRole!=='teacher');
+   $('tutorVolumeControl').classList.toggle('hidden',currentRole==='teacher'||currentRole==='tutor');
+   $('tutorVolumeSlider').value='100';updateTutorVolume(1);
    studentsMuted=false;
    $('muteAllBtn').innerHTML='<span class="control-icon" aria-hidden="true">🔇</span>';
    $('muteAllBtn').title='Mute all students';
@@ -883,11 +922,12 @@ async function joinRoom(event){
        element.autoplay=true;
        element.style.display='none';
        document.body.append(element);
+       if(isTutorParticipant(participant)&&track.source===Track.Source.Microphone)routeTutorAudioThroughGain(element);
      }
    });
 
    room.on(RoomEvent.TrackUnsubscribed,(track,publication,participant)=>{
-     track.detach().forEach(element=>element.remove());
+     track.detach().forEach(element=>clearTutorAudioElement(element));
 
      if(track.kind===Track.Kind.Video){
        makeTile;
@@ -1012,7 +1052,7 @@ async function joinRoom(event){
 
    let microphoneReady=false;
    try{
-     await room.localParticipant.setMicrophoneEnabled(true);
+     await room.localParticipant.setMicrophoneEnabled(true,microphoneCaptureOptions);
      microphoneReady=true;
    }catch(error){
      setStatus('Your microphone could not be started. Check browser microphone permission and use the microphone button to retry.','error');
@@ -1068,6 +1108,10 @@ async function joinRoom(event){
 
 joinForm.addEventListener('submit',joinRoom);
 
+$('tutorVolumeSlider').addEventListener('input',async event=>{
+ updateTutorVolume(Number(event.target.value)/100);
+ if(tutorAudioContext&&tutorAudioContext.state==='suspended')await tutorAudioContext.resume().catch(()=>{});
+});
 $('enableAudioBtn').addEventListener('click',async()=>{
  if(!room)return;
  const button=$('enableAudioBtn');
@@ -1090,7 +1134,7 @@ $('micBtn').addEventListener('click',async()=>{
  const nextState=!micOn;
 
  try{
-   await room.localParticipant.setMicrophoneEnabled(nextState);
+   await room.localParticipant.setMicrophoneEnabled(nextState,microphoneCaptureOptions);
    micOn=nextState;
 
    $('micBtn').innerHTML=`<span class="control-icon" aria-hidden="true">${micOn?'🎙':'🔇'}</span>`;
@@ -1202,6 +1246,7 @@ $('backDashboardBtn').addEventListener('click',async(event)=>{
 $('leaveBtn').addEventListener('click',async()=>{
  // Intentionally keep the same YouTube broadcast running across temporary departures.
  await stopPresenceHeartbeat();
+ await closeTutorAudioContext();
 
  if(room){
    try{
