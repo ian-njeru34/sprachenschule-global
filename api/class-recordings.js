@@ -112,7 +112,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (action === 'stop') {
-      if (!['tutor','teacher'].includes(role) || cls.teacher_id !== user.id) return res.status(403).json({ error: 'Only the assigned tutor can stop the YouTube stream.' });
+      if (!registrar && (!['tutor','teacher'].includes(role) || cls.teacher_id !== user.id)) return res.status(403).json({ error: 'Only the assigned tutor or a registrar can stop the YouTube stream.' });
       const { data: active } = await admin.from('class_recordings').select('*').eq('class_id',classId).eq('status','live').order('created_at',{ascending:false}).limit(1).maybeSingle();
       if (!active) return res.status(200).json({ ok:true, message:'No active YouTube stream.' });
       if (!process.env.LIVEKIT_URL || !process.env.LIVEKIT_API_KEY || !process.env.LIVEKIT_API_SECRET) return res.status(503).json({ error: 'LiveKit Egress is not configured.' });
