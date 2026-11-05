@@ -40,8 +40,11 @@ async function openTutorMaterialPreview(material,target,button){
  let view;
  if(kind==='video'||kind==='audio'){
   view=document.createElement(kind);view.controls=true;view.preload='metadata';view.playsInline=true;view.style.width='100%';view.style.maxWidth='760px';view.style.marginTop='8px';view.src=url;
-  view.addEventListener('loadedmetadata',()=>{status.textContent='Playback test: file loaded. Press Play to test sound and playback.'},{once:true});
+  view.addEventListener('loadedmetadata',()=>{status.textContent='Playback test: media loaded. Press Play to test sound and playback.'},{once:true});
   view.addEventListener('canplay',()=>{status.textContent='Playback test: ready to play.'},{once:true});
+  view.addEventListener('playing',()=>{status.textContent='Playback test: media is playing.'});
+  view.addEventListener('pause',()=>{if(view.currentTime>0&&!view.ended)status.textContent='Playback paused.'});
+  view.addEventListener('ended',()=>{status.textContent='Playback test complete: media reached the end.'});
   view.addEventListener('error',()=>{status.textContent='Playback test failed in this browser. The file is accessible, but its format or codec may not be supported.'});
  }else if(kind==='image'){
   view=document.createElement('img');view.src=url;view.alt=material.title||'Uploaded class material';view.style.cssText='display:block;max-width:100%;max-height:460px;object-fit:contain;margin-top:8px;background:#fff';
@@ -63,8 +66,8 @@ function bindTutorMaterialControls(box,data){
   if(material&&target)openTutorMaterialPreview(material,target,button);
  }));
  box.querySelectorAll('[data-hide-material]').forEach(button=>button.addEventListener('click',async()=>{
-  const hidden=button.dataset.hidden!=='true';button.disabled=true;
-  const {error}=await sb.from('class_materials').update({is_hidden:!hidden,hidden_at:!hidden?new Date().toISOString():null}).eq('id',button.dataset.hideMaterial);
+  const currentlyHidden=button.dataset.hidden==='true';const nextHidden=!currentlyHidden;button.disabled=true;
+  const {error}=await sb.from('class_materials').update({is_hidden:nextHidden,hidden_at:nextHidden?new Date().toISOString():null}).eq('id',button.dataset.hideMaterial);
   if(error){alert('Could not update visibility: '+error.message);button.disabled=false;return}
   await loadTutorMaterials(button.dataset.classId||button.closest('[data-class-materials]')?.dataset.classId);
   await loadTutorMaterialsOverview();
@@ -83,7 +86,7 @@ async function loadTutorMaterialsOverview(){
  const box=el('tutorMaterialsOverview');if(!box)return;
  const classIds=[...document.querySelectorAll('#materialClass option')].map(o=>o.value).filter(Boolean);
  if(!classIds.length){box.textContent='No assigned classes are available yet.';if(el('tutorMaterialCount'))el('tutorMaterialCount').textContent='0 uploads';return}
- const {data,error}=await sb.from('class_materials').select('id,class_id,title,material_type,is_hidden,storage_path').in('class_id',classIds).is('deleted_at',null).order('created_at',{ascending:false});
+ const {data,error}=await sb.from('class_materials').select('id,class_id,title,material_type,is_hidden,storage_path,uploaded_by').in('class_id',classIds).eq('uploaded_by',me.id).is('deleted_at',null).order('created_at',{ascending:false});
  if(error){box.textContent='Could not load your uploads: '+error.message;return}
  const rows=data||[];
  if(el('tutorMaterialCount'))el('tutorMaterialCount').textContent=rows.length+' upload'+(rows.length===1?'':'s');
