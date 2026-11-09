@@ -150,7 +150,7 @@ body.school-page main>section{background:transparent;}
   max-width:1050px;
   margin:22px 0 8px;
   color:#ffd36e;
-  font-family:"Segoe Script","Brush Script MT","Lucida Handwriting",cursive;
+  font-family:"Segoe Print",cursive;
   font-size:clamp(2.25rem,5.1vw,4.6rem);
   font-weight:500;
   font-style:normal;
