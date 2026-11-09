@@ -174,3 +174,7 @@ body.school-page main>section{background:transparent;}
   }
   .hero-video-hero .hero-quote-attribution{margin-bottom:18px;}
 }
+
+/* Make the homepage hero actions appear promptly without the gradual upward slide. */
+.hero-video-hero .hero-copy.reveal{animation:heroQuickFade .22s ease-out both;}
+@keyframes heroQuickFade{from{opacity:0}to{opacity:1}}
