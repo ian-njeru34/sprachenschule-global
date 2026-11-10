@@ -31,7 +31,7 @@
 .video-tile video{width:100%;height:100%;min-height:190px;object-fit:cover;position:absolute;inset:0}
 
 /* Large presentation area with a smaller participant column */
-.video-grid:has(.screen-share-tile){grid-template-columns:minmax(0,4fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr);align-content:stretch;min-height:520px}
+.video-grid:has(.screen-share-tile){grid-template-columns:minmax(0,4fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr);align-content:stretch;min-height:0;height:clamp(480px,72vh,760px);max-height:760px;overflow:hidden}
 .video-grid:has(.screen-share-tile) .screen-share-tile{grid-column:1;grid-row:1 / span 20;min-height:520px;height:100%;order:-1}
 .video-grid:has(.screen-share-tile) .screen-share-tile video{object-fit:contain;min-height:420px;background:#080d0c}
 .video-grid:has(.screen-share-tile) .material-presentation{grid-column:1;grid-row:1 / span 20;min-height:520px;height:100%;order:-1;background:#fff;color:#17221d;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
@@ -43,14 +43,14 @@
 .presentation-toolbar .media-time{font-size:.78rem;font-variant-numeric:tabular-nums;white-space:nowrap}
 .presentation-content{position:relative;flex:1;min-height:0;height:auto;overflow:auto;background:#111}
 .presentation-content .presented-media{display:block;width:100%;height:100%;min-height:0;max-height:none;object-fit:contain;background:#080d0c}
-.pdf-scroll{box-sizing:border-box;height:100%;width:100%;overflow:auto;background:#333;padding:14px;overscroll-behavior:contain;scrollbar-gutter:stable}
-.pdf-pages{display:flex;flex-direction:column;align-items:flex-start;gap:14px;width:max-content;min-width:100%;box-sizing:border-box}
-.pdf-page-wrap{flex:0 0 auto;width:max-content;max-width:none;margin-inline:auto}
-.pdf-page{display:block;background:#fff;box-shadow:0 2px 14px #0007;max-width:none}
+.pdf-scroll{box-sizing:border-box;flex:1 1 0;min-height:0;height:0;width:100%;overflow:auto;background:#333;padding:12px;overscroll-behavior:contain;scrollbar-gutter:stable}
+.pdf-pages{display:flex;flex-direction:column;align-items:center;gap:14px;width:max-content;min-width:100%;box-sizing:border-box}
+.pdf-page-wrap{display:flex;flex:0 0 auto;align-items:flex-start;justify-content:center;width:max-content;max-width:none;margin-inline:auto}
+.pdf-page{display:block;flex:0 0 auto;background:#fff;box-shadow:0 2px 14px #0007;max-width:none}
 .pdf-page canvas{display:block;max-width:none}
 .pdf-loading{color:white;text-align:center;padding:24px}
 .material-presentation .presentation-heading{padding:8px 12px;margin:0;background:#173d35;color:white;font-weight:800;flex:0 0 auto}
-.material-presentation .presentation-content{height:auto;min-height:0}
+.material-presentation .presentation-content{flex:1 1 0;height:0;min-height:0;overflow:hidden;display:flex;flex-direction:column}
 .material-presentation video.presented-media{position:relative;inset:auto;min-height:370px;width:100%;height:100%;object-fit:contain}
 .material-presentation audio.presented-media{position:relative;inset:auto;display:block;width:92%;max-width:700px;margin:50px auto}
 .material-presentation .presented-media{width:100%;height:100%;min-height:0;max-height:none;object-fit:contain;background:#080d0c}
@@ -111,10 +111,11 @@
  .video-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
  .video-tile{min-height:160px}
  .video-tile video{min-height:160px}
- .video-grid:has(.screen-share-tile){grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(260px,1fr) auto;min-height:0}
+ .video-grid:has(.screen-share-tile){grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(260px,1fr) auto;min-height:0;height:auto;max-height:none;overflow:visible}
  .video-grid:has(.screen-share-tile) .screen-share-tile{grid-column:1;grid-row:1;min-height:260px;height:60vh}
  .video-grid:has(.screen-share-tile) .screen-share-tile video{min-height:260px}
  .video-grid:has(.screen-share-tile) .material-presentation{grid-column:1;grid-row:1;min-height:260px;height:60vh}
+ .material-presentation .presentation-content{flex:1 1 0;height:0;min-height:0}
  .video-grid:has(.screen-share-tile) .video-tile:not(.screen-share-tile){grid-column:auto;min-height:120px;max-height:none;height:120px}
  .video-grid:has(.screen-share-tile) .video-tile:not(.screen-share-tile) video{min-height:120px}
 }
@@ -768,7 +769,7 @@ async function fitPdfWidth(leader){
  const base=page.getViewport({scale:1});
  const scroll=$('pdfScroll');
  // clientWidth includes the scrollbar; subtract both inner paddings and a small safety margin.
- const width=Math.max(240,scroll.clientWidth-28-16);
+ const width=Math.max(120,scroll.clientWidth-24);
  await setPdfZoom(Math.max(.25,Math.min(2.5,width/base.width)),leader);
 }
 
@@ -826,8 +827,8 @@ async function displayMaterial(id,leader,viewState=null){
      try{
        const pdfjs=await getPdfJs();
        pdfDocument=await pdfjs.getDocument({url:link.signedUrl}).promise;
-       await renderPdf(viewState?.scale||1,false);
-       if(viewState?.page)goPdfPage(viewState.page,false);else await fitPdfWidth(false);
+       await fitPdfWidth(false);
+       if(viewState?.page)goPdfPage(viewState.page,false);
        let lastPage=0;
        scroll.addEventListener('scroll',()=>{
          const wraps=[...pages.querySelectorAll('.pdf-page-wrap')];
