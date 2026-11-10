@@ -69,6 +69,12 @@
 .control-btn:focus-visible{outline:3px solid #a7d7c2;outline-offset:3px}
 .control-btn:disabled{opacity:.5;cursor:not-allowed}
 .control-btn .control-icon{display:block}
+.reaction-btn{font-size:1.45rem}
+.control-btn.hand-raised{background:#b7791f;border-color:#f2c46d;box-shadow:0 0 0 2px rgba(242,196,109,.2)}
+.clear-hands-count{font-size:.72rem;font-weight:800;margin-left:3px}
+.raised-hand-indicator{position:absolute;top:9px;right:9px;z-index:5;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#f4c45e;color:#17221d;font-size:1.2rem;box-shadow:0 2px 10px #0006}
+.clap-float{position:absolute;z-index:6;left:50%;top:42%;font-size:clamp(2.2rem,5vw,4rem);pointer-events:none;transform:translate(-50%,-50%);animation:clap-pop 1.35s ease-out forwards;text-shadow:0 3px 12px #0008}
+@keyframes clap-pop{0%{opacity:0;transform:translate(-50%,0) scale(.55)}15%{opacity:1;transform:translate(-50%,-18px) scale(1.18)}75%{opacity:1;transform:translate(-50%,-70px) scale(1)}100%{opacity:0;transform:translate(-50%,-105px) scale(.9)}}
 .control-btn.is-active{background:#176b50;border-color:#53a982;box-shadow:0 0 0 2px rgba(83,169,130,.18)}
 .control-btn.is-inactive{background:#7d2929;border-color:#b94b4b}
 .control-btn.is-active:hover{background:#12563f}
@@ -243,6 +249,9 @@
     <button class="control-btn hidden" id="enableAudioBtn" type="button" aria-label="Enable classroom audio" title="Enable classroom audio"><span class="control-icon" aria-hidden="true">🔊</span></button>
     <button class="control-btn is-active" id="camBtn" type="button" aria-label="Turn camera off" title="Turn camera off" aria-pressed="true"><span class="control-icon" aria-hidden="true">📹</span></button>
     <button class="control-btn" id="shareBtn" type="button" aria-label="Share screen" title="Share screen"><span class="control-icon" aria-hidden="true">▣</span></button>
+    <button class="control-btn reaction-btn" id="clapBtn" type="button" aria-label="Clap" title="Applaud the class"><span class="control-icon" aria-hidden="true">👏</span></button>
+    <button class="control-btn reaction-btn" id="raiseHandBtn" type="button" aria-label="Raise hand" title="Raise your hand" aria-pressed="false"><span class="control-icon" aria-hidden="true">✋</span></button>
+    <button class="control-btn hidden" id="clearHandsBtn" type="button" aria-label="Clear raised hands" title="Clear all raised hands"><span class="control-icon" aria-hidden="true">✋</span><span class="clear-hands-count" id="raisedHandCount">0</span></button>
     <button class="control-btn hidden" id="muteAllBtn" type="button" aria-label="Mute all students" title="Mute all students (tutor only)"><span class="control-icon" aria-hidden="true">🔇</span></button>
     <button class="control-btn danger" id="leaveBtn" type="button" aria-label="Leave classroom" title="Leave classroom"><span class="control-icon" aria-hidden="true">☎</span></button>
    </div>
@@ -309,6 +318,8 @@ let micOn=true;
 let camOn=true;
 let sharing=false;
 let studentsMuted=false;
+let handRaised=false;
+const raisedHands=new Map();
 let pdfDocument=null;
 let pdfScale=1;
 let mediaZoom=1;
@@ -449,11 +460,58 @@ function refreshParticipants(){
        if(['teacher','tutor'].includes(String(metadata.role||'').toLowerCase()))participantRole='tutor';
      }catch{}
      role.textContent=['teacher','tutor'].includes(String(participantRole).toLowerCase())?'Tutor':'Student';
-     item.append(dot,name,role);list.append(item);
+     item.append(dot,name,role);
+     if(raisedHands.get(participant.identity)){const hand=document.createElement('span');hand.textContent='✋';hand.title='Wants to speak';hand.setAttribute('aria-label','Wants to speak');item.append(hand);}
+     list.append(item);
    });
  }
  const sideList=$('participants');
- if(sideList)sideList.textContent=all.map(p=>participantLabel(p)).join(' · ');
+ if(sideList)sideList.textContent=all.map(p=>participantLabel(p)+(raisedHands.get(p.identity)?' ✋':'')).join(' · ');
+ const handCount=$('raisedHandCount');if(handCount)handCount.textContent=String(raisedHands.size);
+}
+
+function setRaisedHand(participant,raised){
+ if(!participant)return;
+ const key=participant.identity||participant.sid;
+ if(!key)return;
+ if(raised)raisedHands.set(key,true);else raisedHands.delete(key);
+ const tile=document.getElementById('tile-'+(participant.sid||participant.identity));
+ if(tile){
+   let badge=tile.querySelector('.raised-hand-indicator');
+   if(raised&&!badge){badge=document.createElement('span');badge.className='raised-hand-indicator';badge.textContent='✋';badge.title=participantLabel(participant)+' wants to speak';badge.setAttribute('aria-label','Wants to speak');tile.append(badge);}
+   if(!raised)badge?.remove();
+ }
+ if(participant===room?.localParticipant){
+   handRaised=raised;
+   $('raiseHandBtn').classList.toggle('hand-raised',raised);
+   $('raiseHandBtn').setAttribute('aria-pressed',String(raised));
+   $('raiseHandBtn').setAttribute('aria-label',raised?'Lower hand':'Raise hand');
+   $('raiseHandBtn').title=raised?'Lower your hand':'Raise your hand';
+ }
+ refreshParticipants();
+}
+
+function showClap(participant){
+ const tile=document.getElementById('tile-'+(participant?.sid||participant?.identity));
+ if(!tile)return;
+ const effect=document.createElement('span');effect.className='clap-float';effect.textContent='👏';effect.setAttribute('aria-hidden','true');tile.append(effect);
+ effect.addEventListener('animationend',()=>effect.remove(),{once:true});
+}
+
+async function toggleRaisedHand(){
+ if(!room)return;
+ const next=!handRaised;
+ setRaisedHand(room.localParticipant,next);
+ await sendClassEvent({type:'hand-status',raised:next});
+}
+
+async function clearRaisedHands(){
+ if(!room||currentRole!=='teacher')return;
+ raisedHands.clear();handRaised=false;
+ $('raiseHandBtn').classList.remove('hand-raised');$('raiseHandBtn').setAttribute('aria-pressed','false');$('raiseHandBtn').setAttribute('aria-label','Raise hand');$('raiseHandBtn').title='Raise your hand';
+ document.querySelectorAll('.raised-hand-indicator').forEach(node=>node.remove());
+ refreshParticipants();
+ await sendClassEvent({type:'hand-clear'});
 }
 
 function renderPublished(participant){
@@ -889,6 +947,9 @@ async function joinRoom(event){
    $('backDashboardBtn').href=dashboardReturnUrl;
    $('backDashboardBtn').textContent=currentRole==='teacher'?'← Back to tutor dashboard':'← Back to student dashboard';
    $('muteAllBtn').classList.toggle('hidden',currentRole!=='teacher');
+   $('clearHandsBtn').classList.toggle('hidden',currentRole!=='teacher');
+   raisedHands.clear();handRaised=false;
+   $('raiseHandBtn').classList.remove('hand-raised');$('raiseHandBtn').setAttribute('aria-pressed','false');
    $('shareBtn').classList.toggle('hidden',currentRole!=='teacher');
    $('tutorVolumeControl').classList.toggle('hidden',currentRole==='teacher'||currentRole==='tutor');
    $('tutorVolumeSlider').value='100';updateTutorVolume(1);
@@ -941,6 +1002,7 @@ async function joinRoom(event){
 
    room.on(RoomEvent.ParticipantDisconnected,participant=>{
      removeTile(participant.sid||participant.identity);
+     raisedHands.delete(participant.identity);
      refreshParticipants();
    });
 
@@ -948,6 +1010,21 @@ async function joinRoom(event){
      try{
        const message=JSON.parse(new TextDecoder().decode(data));
 
+       if(message.type==='clap'){
+         showClap(participant);
+         return;
+       }
+       if(message.type==='hand-status'&&typeof message.raised==='boolean'){
+         setRaisedHand(participant,message.raised);
+         return;
+       }
+       if(message.type==='hand-clear'&&isTutorParticipant(participant)){
+         raisedHands.clear();handRaised=false;
+         $('raiseHandBtn').classList.remove('hand-raised');$('raiseHandBtn').setAttribute('aria-pressed','false');$('raiseHandBtn').setAttribute('aria-label','Raise hand');$('raiseHandBtn').title='Raise your hand';
+         document.querySelectorAll('.raised-hand-indicator').forEach(node=>node.remove());
+         refreshParticipants();
+         return;
+       }
        if(message.type==='chat'&&typeof message.message==='string'){
          addChat(
            message.name||participantLabel(participant),
@@ -1128,6 +1205,14 @@ $('enableAudioBtn').addEventListener('click',async()=>{
  }
 });
 
+$('clapBtn').addEventListener('click',async()=>{
+ if(!room)return;
+ showClap(room.localParticipant);
+ await sendClassEvent({type:'clap'});
+});
+$('raiseHandBtn').addEventListener('click',toggleRaisedHand);
+$('clearHandsBtn').addEventListener('click',clearRaisedHands);
+
 $('micBtn').addEventListener('click',async()=>{
  if(!room)return;
 
@@ -1261,6 +1346,9 @@ $('leaveBtn').addEventListener('click',async()=>{
  }
 
  $('videoGrid').replaceChildren();
+ raisedHands.clear();handRaised=false;
+ $('raiseHandBtn').classList.remove('hand-raised');$('raiseHandBtn').setAttribute('aria-pressed','false');$('raiseHandBtn').setAttribute('aria-label','Raise hand');$('raiseHandBtn').title='Raise your hand';
+ $('clearHandsBtn').classList.add('hidden');
  $('chatLog').replaceChildren();
  $('classMaterials').textContent='Materials load when you join the scheduled class.';
  $('participants').textContent='You are connected.';
