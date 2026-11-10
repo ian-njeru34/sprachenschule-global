@@ -43,9 +43,10 @@
 .presentation-toolbar .media-time{font-size:.78rem;font-variant-numeric:tabular-nums;white-space:nowrap}
 .presentation-content{position:relative;flex:1;min-height:0;height:auto;overflow:auto;background:#111}
 .presentation-content .presented-media{display:block;width:100%;height:100%;min-height:0;max-height:none;object-fit:contain;background:#080d0c}
-.pdf-scroll{height:100%;width:100%;overflow:auto;background:#333;padding:14px;overscroll-behavior:contain}
-.pdf-pages{display:flex;flex-direction:column;align-items:center;gap:14px;min-width:max-content}
-.pdf-page{background:#fff;box-shadow:0 2px 14px #0007;max-width:none}
+.pdf-scroll{box-sizing:border-box;height:100%;width:100%;overflow:auto;background:#333;padding:14px;overscroll-behavior:contain;scrollbar-gutter:stable}
+.pdf-pages{display:flex;flex-direction:column;align-items:flex-start;gap:14px;width:max-content;min-width:100%;box-sizing:border-box}
+.pdf-page-wrap{flex:0 0 auto;width:max-content;max-width:none;margin-inline:auto}
+.pdf-page{display:block;background:#fff;box-shadow:0 2px 14px #0007;max-width:none}
 .pdf-page canvas{display:block;max-width:none}
 .pdf-loading{color:white;text-align:center;padding:24px}
 .material-presentation .presentation-heading{padding:8px 12px;margin:0;background:#173d35;color:white;font-weight:800;flex:0 0 auto}
@@ -765,8 +766,10 @@ async function fitPdfWidth(leader){
  if(!pdfDocument)return;
  const page=await pdfDocument.getPage(1);
  const base=page.getViewport({scale:1});
- const width=Math.max(320,$('pdfScroll').clientWidth-44);
- await setPdfZoom(Math.max(.5,Math.min(2.5,width/base.width)),leader);
+ const scroll=$('pdfScroll');
+ // clientWidth includes the scrollbar; subtract both inner paddings and a small safety margin.
+ const width=Math.max(240,scroll.clientWidth-28-16);
+ await setPdfZoom(Math.max(.25,Math.min(2.5,width/base.width)),leader);
 }
 
 async function getRecordingPresentation(id){
