@@ -720,13 +720,25 @@ async function renderPdfPage(pageNumber,scale,token){
  const page=await pdfDocument.getPage(pageNumber);
  if(token!==pdfRenderToken)return;
  const viewport=page.getViewport({scale});
+ // Render at a higher backing resolution for crisp text on high-DPI screens,
+ // while preserving the same CSS dimensions and classroom layout.
+ const outputScale=Math.min(Math.max(window.devicePixelRatio||1,1),2.5);
  const canvas=document.createElement('canvas');
- canvas.className='pdf-page';canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
- canvas.style.width=viewport.width+'px';canvas.style.height=viewport.height+'px';
+ canvas.className='pdf-page';
+ canvas.width=Math.ceil(viewport.width*outputScale);
+ canvas.height=Math.ceil(viewport.height*outputScale);
+ canvas.style.width=viewport.width+'px';
+ canvas.style.height=viewport.height+'px';
  canvas.dataset.page=String(pageNumber);
  const wrap=document.createElement('div');wrap.className='pdf-page-wrap';wrap.dataset.page=String(pageNumber);wrap.append(canvas);
  $('pdfPages').append(wrap);
- await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+ const context=canvas.getContext('2d',{alpha:false});
+ await page.render({
+   canvasContext:context,
+   viewport,
+   transform:outputScale===1?null:[outputScale,0,0,outputScale,0,0],
+   intent:'display'
+ }).promise;
 }
 
 async function renderPdf(scale,preservePage=true){
