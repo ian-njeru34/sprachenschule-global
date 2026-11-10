@@ -722,7 +722,8 @@ async function renderPdfPage(pageNumber,scale,token){
  const viewport=page.getViewport({scale});
  // Render at a higher backing resolution for crisp text on high-DPI screens,
  // while preserving the same CSS dimensions and classroom layout.
- const outputScale=Math.min(Math.max(window.devicePixelRatio||1,1),2.5);
+ // Use at least 2x backing resolution on standard displays and up to 3x on high-DPI screens.
+ const outputScale=Math.min(Math.max(window.devicePixelRatio||1,2),3);
  const canvas=document.createElement('canvas');
  canvas.className='pdf-page';
  canvas.width=Math.ceil(viewport.width*outputScale);
