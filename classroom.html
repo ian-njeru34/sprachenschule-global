@@ -323,7 +323,7 @@ let studentsMuted=false;
 let handRaised=false;
 const raisedHands=new Map();
 let pdfDocument=null;
-let pdfScale=1;
+let pdfScale=.25;
 let mediaZoom=1;
 let pdfCurrentPage=1;
 let pdfRenderToken=0;
@@ -701,11 +701,12 @@ function addPresentationToolbar(content,kind,leader,media=null){
    const pageLabel=document.createElement('span');pageLabel.className='media-time';pageLabel.id='pdfPageLabel';pageLabel.textContent='Page 1';
    const prev=document.createElement('button');prev.type='button';prev.textContent='← Page';prev.addEventListener('click',()=>goPdfPage(Math.max(1,pdfCurrentPage-1),leader));
    const next=document.createElement('button');next.type='button';next.textContent='Page →';next.addEventListener('click',()=>goPdfPage(Math.min(pdfDocument?.numPages||1,pdfCurrentPage+1),leader));
-   const minus=document.createElement('button');minus.type='button';minus.textContent='−';minus.title='Zoom out';minus.addEventListener('click',()=>setPdfZoom(Math.max(.5,pdfScale-.15),leader));
-   const zoom=document.createElement('span');zoom.className='media-time';zoom.id='pdfZoomLabel';zoom.textContent='100%';
-   const plus=document.createElement('button');plus.type='button';plus.textContent='+';plus.title='Zoom in';plus.addEventListener('click',()=>setPdfZoom(Math.min(2.5,pdfScale+.15),leader));
-   const fit=document.createElement('button');fit.type='button';fit.textContent='Fit width';fit.addEventListener('click',()=>fitPdfWidth(leader));
-   toolbar.append(prev,pageLabel,next,minus,zoom,plus,fit);
+   const minus=document.createElement('button');minus.type='button';minus.textContent='−';minus.title='Zoom out';minus.setAttribute('aria-label','Zoom PDF out');minus.addEventListener('click',()=>setPdfZoom(Math.max(.25,Math.round((pdfScale-.25)*100)/100),leader));
+   const zoom=document.createElement('span');zoom.className='media-time';zoom.id='pdfZoomLabel';zoom.textContent='25%';
+   const plus=document.createElement('button');plus.type='button';plus.textContent='+';plus.title='Zoom in';plus.setAttribute('aria-label','Zoom PDF in');plus.addEventListener('click',()=>setPdfZoom(Math.min(3,Math.round((pdfScale+.25)*100)/100),leader));
+   const reset=document.createElement('button');reset.type='button';reset.textContent='100%';reset.title='Reset PDF to actual size';reset.addEventListener('click',()=>setPdfZoom(1,leader));
+   const fit=document.createElement('button');fit.type='button';fit.textContent='Fit width';fit.title='Fit PDF page to presentation width';fit.addEventListener('click',()=>fitPdfWidth(leader));
+   toolbar.append(prev,pageLabel,next,minus,zoom,plus,reset,fit);
  }
  content.parentElement.insertBefore(toolbar,content);
 }
@@ -783,7 +784,7 @@ async function fitPdfWidth(leader){
  const scroll=$('pdfScroll');
  // clientWidth includes the scrollbar; subtract both inner paddings and a small safety margin.
  const width=Math.max(120,scroll.clientWidth-24);
- await setPdfZoom(Math.max(.25,Math.min(2.5,width/base.width)),leader);
+ await setPdfZoom(Math.max(.25,Math.min(3,width/base.width)),leader);
 }
 
 async function getRecordingPresentation(id){
@@ -805,7 +806,7 @@ async function displayMaterial(id,leader,viewState=null){
  const {data:link,error:linkError}=await sb.storage.from('class-materials').createSignedUrl(m.storage_path,300);
  if(linkError||!link?.signedUrl){setStatus('Could not open material: '+(linkError?.message||'Access denied'),'error');return;}
  activeMaterialId=m.id;
- pdfDocument=null;pdfRenderToken++;mediaZoom=1;
+ pdfDocument=null;pdfRenderToken++;pdfScale=.25;mediaZoom=1;
  let tile=document.getElementById('materialPresentationTile');
  if(!tile){tile=document.createElement('div');tile.id='materialPresentationTile';tile.className='video-tile screen-share-tile material-presentation';$('videoGrid').prepend(tile);}
  tile.replaceChildren();
@@ -840,8 +841,9 @@ async function displayMaterial(id,leader,viewState=null){
      try{
        const pdfjs=await getPdfJs();
        pdfDocument=await pdfjs.getDocument({url:link.signedUrl}).promise;
-       await fitPdfWidth(false);
+       await renderPdf(Number.isFinite(viewState?.scale)?Math.max(.25,Math.min(3,viewState.scale)):.25,false);
        if(viewState?.page)goPdfPage(viewState.page,false);
+       if(leader)await sendClassEvent({type:'pdf-view',id:activeMaterialId,page:pdfCurrentPage,scale:pdfScale});
        let lastPage=0;
        scroll.addEventListener('scroll',()=>{
          const wraps=[...pages.querySelectorAll('.pdf-page-wrap')];
