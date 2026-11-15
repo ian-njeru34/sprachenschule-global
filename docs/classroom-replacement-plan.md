@@ -67,3 +67,18 @@ Identify every LiveKit import, API route, webhook, environment variable, and egr
 - Existing class, enrolment, role, approval, expiry, tutor assignment, and scheduled-time rules remain enforced on the server.
 - All retained classroom features listed above pass multi-device tests.
 - The limitations of direct P2P without TURN are clearly disclosed and tested.
+
+
+## Initial repository audit (2026-11-16)
+
+- `classroom.html` is a 1,542-line self-contained page with inline styles/scripts and a direct `livekit-client@2.15.5` browser import. It currently calls `/api/livekit-token`, `/api/livekit-presence`, `/api/livekit-mute-students`, and `/api/class-recordings`. It reads existing `class_materials` records and uses the existing materials storage workflow.
+- `dashboard.html` currently links both the next lesson and scheduled lessons to `classroom.html?room=...` using ordinary same-tab anchors (no `target="_blank"`). This already satisfies the requested same-origin, same-tab navigation behaviour.
+- `teacher.html` also links assigned lessons to `classroom.html?room=...` using ordinary same-tab anchors. No external meeting URL or new-tab target is used by those lesson actions.
+- `api/livekit-token.js` currently enforces the scheduled class, 15-minute pre-start/post-end join window, tutor assignment, student enrolment, approval/expiry/suspension, and tutor-present student publishing gate. These checks must be ported to the new admission service.
+- `api/livekit-presence.js` updates `class_presence` and currently depends on LiveKit RoomService to update student publish permissions and mute audio tracks. The replacement must not retain that LiveKit dependency.
+- `api/livekit-mute-students.js` uses LiveKit RoomService to mute student audio tracks. A P2P replacement needs a tutor-authorised mute command delivered to clients, with each student client enforcing the mute state; server-side authorisation must gate the command.
+- `api/class-recordings.js` uses LiveKit Egress to start/stop YouTube RTMP room-composite streaming. This is a distinct LiveKit dependency and is not automatically replaced by browser P2P. Keep it explicitly out of the initial classroom replacement unless a separate no-cost, tested alternative is designed.
+- `package.json` currently includes `livekit-server-sdk`; remove it only after the repository-wide dependency audit proves no remaining production route needs it.
+- The previously expected `api/classroom-events.js`, `api/classroom-presentation.js`, `api/classroom-materials.js`, and `api/livekit-webhook.js` paths were not found on the default branch during this audit; do not assume they exist. Reconcile the actual repository file tree before implementation.
+
+The student and tutor dashboard lesson links already open the internal classroom page in the same tab. Preserve that behaviour; do not introduce an iframe, popup, new tab, or external redirect as part of this migration.
