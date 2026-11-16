@@ -11,7 +11,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Vary', 'Origin');
 
   const origin = req.headers.origin;
-  if (origin && ALLOWED_ORIGINS.has(origin)) {
+  const isVercelPreview = process.env.VERCEL_ENV === 'preview' &&\n    /^https:\/\/sprachenschule-global-[a-z0-9-]+-ian-mwandiki-njeru\\.vercel\\.app$/.test(origin || '');\n  if (origin && (ALLOWED_ORIGINS.has(origin) || isVercelPreview)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
