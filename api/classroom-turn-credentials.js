@@ -96,8 +96,7 @@ module.exports = async function handler(req, res) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          ttl: 21600,
-          customIdentifier: 'ssg-' + classId.slice(0, 8) + '-' + authData.user.id.slice(0, 8)
+          ttl: 21600
         })
       }
     );
