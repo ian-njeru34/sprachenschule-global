@@ -238,8 +238,8 @@ function updateTutorPresence(present){
  const changed=state.tutorPresent!==present;state.tutorPresent=present;
  if(isStudent()){
   if(!present){state.studentsMuted=true;setMic(false);roomStatus('Assigned tutor is absent. Student microphones are disabled.');}
-  else if(!changed || !state.studentsMuted){roomStatus('Tutor is present. Your microphone is off until you choose to unmute.');}
-  else{state.studentsMuted=false;roomStatus('Tutor is present. Your microphone is off until you choose to unmute.');}
+  else if(changed){state.studentsMuted=false;roomStatus('Tutor is present. Your microphone is off until you choose to unmute.');}
+  else if(!state.studentsMuted){roomStatus('Tutor is present. Your microphone is off until you choose to unmute.');}
   updateControlButtons();
  }
  if(changed)for(const [id,p] of state.participants){const audio=document.getElementById('audio-'+id);if(audio&&p.role==='student'){if(present)audio.play().catch(()=>{});else audio.pause();}}
