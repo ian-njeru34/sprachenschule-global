@@ -340,9 +340,11 @@ async function startRecording(){
  if(!isTutor()||state.recording)return;
  if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream){roomStatus('This browser does not support classroom recording. Try a current version of Chrome or Edge.');return;}
  $('recordBtn').disabled=true;
+ let recordingRowId=null;
  try{
   const {data:row,error}=await supabase.from('class_recordings').insert({class_id:state.classInfo.id,requested_by:state.user.id,status:'recording',started_at:new Date().toISOString()}).select('id').single();
   if(error||!row)throw new Error(error?.message||'Could not create the recording record.');
+  recordingRowId=row.id;
   const canvas=document.createElement('canvas');canvas.width=1280;canvas.height=720;
   const ctx=canvas.getContext('2d',{alpha:false});
   const canvasStream=canvas.captureStream(15);
@@ -376,9 +378,9 @@ async function startRecording(){
    const path=state.classInfo.id+'/recordings/'+rec.id+'.webm';
    try{
     if(!blob.size||blob.size>50*1024*1024)throw new Error('Recording file is empty or exceeds the 50 MB storage limit.');
-    const {error:uploadError}=await supabase.storage.from('class-materials').upload(path,blob,{contentType:blob.type||'video/webm',upsert:false});
+    const {error:uploadError}=await supabase.storage.from('class-materials').upload(path,blob,{contentType:'video/webm',upsert:false});
     if(uploadError)throw new Error(uploadError.message);
-    const {error:updateError}=await supabase.from('class_recordings').update({status:'completed',storage_path:path,mime_type:blob.type||'video/webm',file_size:blob.size,duration_seconds:duration,completed_at:new Date().toISOString(),error_message:null}).eq('id',rec.id);
+    const {error:updateError}=await supabase.from('class_recordings').update({status:'completed',storage_path:path,mime_type:'video/webm',file_size:blob.size,duration_seconds:duration,completed_at:new Date().toISOString(),error_message:null}).eq('id',rec.id);
     if(updateError)throw new Error(updateError.message);
     roomStatus('Recording saved to the school’s private class recordings.');
    }catch(error){
@@ -415,6 +417,7 @@ async function startRecording(){
   $('recordBtn').classList.add('recording');$('recordBtn').textContent='⏹';$('recordBtn').setAttribute('aria-label','Stop and save class recording');$('recordBtn').title='Stop and save class recording';
   roomStatus('Recording is active on this tutor device. Keep this browser open until it is saved.');
  }catch(error){
+  if(recordingRowId)await supabase.from('class_recordings').update({status:'failed',completed_at:new Date().toISOString(),error_message:String(error.message||error).slice(0,1000)}).eq('id',recordingRowId);
   state.recording=null;$('recordBtn').disabled=false;
   roomStatus('Recording could not start: '+(error.message||'browser error'));
  }
