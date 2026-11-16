@@ -67,6 +67,7 @@ async function joinClass(event){
   await startLocalMedia();
   await insertAttendance();
   await subscribeSignals();
+  await loadMuteState();
   await subscribeLeases();
   await refreshParticipants();
   await loadMaterials();
@@ -110,7 +111,7 @@ function updateControlButtons(){
  $('participantCount').textContent=state.participants.size+' / 7';
 }
 async function setMic(enabled){
- if(isStudent()&&(!state.tutorPresent||state.studentsMuted)){roomStatus('Your microphone is locked until the tutor is present and has not muted the class.');return;}
+ if(enabled&&isStudent()&&(!state.tutorPresent||state.studentsMuted)){roomStatus('Your microphone is locked until the tutor is present and has not muted the class.');return;}
  if(enabled===state.micOn)return;
  if(enabled){
   try{const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});state.localAudio=stream.getAudioTracks()[0];state.micOn=true;
@@ -158,15 +159,12 @@ function createPeer(id){
  if(state.localVideo)pc.addTrack(state.localVideo,new MediaStream([state.localVideo]));
  if(state.localAudio)pc.addTrack(state.localAudio,new MediaStream([state.localAudio]));
  if(state.screenTrack)pc.addTrack(state.screenTrack,new MediaStream([state.screenTrack]));
- if(state.localVideo)pc.addTrack(state.localVideo,new MediaStream([state.localVideo]));
- if(state.localAudio)pc.addTrack(state.localAudio,new MediaStream([state.localAudio]));
- if(state.screenTrack)pc.addTrack(state.screenTrack,new MediaStream([state.screenTrack]));
  pc.onicecandidate=e=>{if(e.candidate)sendSignal('ice',{candidate:e.candidate.toJSON()},id);};
  pc.ontrack=e=>{
   const participant=state.participants.get(id);if(!participant)return;
   const track=e.track;
   if(track.kind==='audio'){
-   if(participant.role==='student'&&!state.tutorPresent){track.enabled=false;return;}
+   if(participant.role==='student'&&(!state.tutorPresent||state.studentsMuted)){track.enabled=false;return;}
    let audio=document.getElementById('audio-'+id);if(!audio){audio=document.createElement('audio');audio.id='audio-'+id;audio.autoplay=true;audio.playsInline=true;audio.style.display='none';document.body.append(audio);}
    audio.srcObject=e.streams[0]||new MediaStream([track]);audio.play().catch(()=>roomStatus('Tap the page once to enable classroom sound.'));
   }else if(track.kind==='video'){
@@ -210,7 +208,7 @@ function handleClassEvent(type,p,sender){
  if(type==='clap')showClap(sender);
  if(type==='hand'){if(p.raised)state.hands.add(sender);else state.hands.delete(sender);renderHands();}
  if(type==='hand-clear'&&isTutor()){state.hands.clear();renderHands();}
- if(type==='mute-all'&&isStudent()){state.studentsMuted=!!p.muted;if(state.studentsMuted){setMic(false);roomStatus('The tutor has muted student microphones.');}else{roomStatus('The tutor has reopened student microphones.');}updateControlButtons();}
+ if(type==='mute-all'&&isStudent()){state.studentsMuted=!!p.muted;if(state.studentsMuted){setMic(false);roomStatus('The tutor has muted student microphones.');}else{roomStatus('The tutor has reopened student microphones.');}for(const [id,participant] of state.participants){if(participant.role==='student'){const audio=document.getElementById('audio-'+id);if(audio){if(state.studentsMuted)audio.pause();else audio.play().catch(()=>{});}}}updateControlButtons();}
  if(type==='screen-state'&&!isTutor()){if(p.active)state.screenSharers.add(sender);else{state.screenSharers.delete(sender);$('presentationStage').replaceChildren(emptyStage());}}
  if(type==='material-open'&&p.id)openMaterial(p.id,false);
  if(type==='pdf-view'&&p.id===state.activeMaterialId)goPdfPage(p.page,false,p.scale);
@@ -242,7 +240,13 @@ function updateTutorPresence(present){
   else if(!state.studentsMuted){roomStatus('Tutor is present. Your microphone is off until you choose to unmute.');}
   updateControlButtons();
  }
- if(changed)for(const [id,p] of state.participants){const audio=document.getElementById('audio-'+id);if(audio&&p.role==='student'){if(present)audio.play().catch(()=>{});else audio.pause();}}
+ if(changed)for(const [id,p] of state.participants){const audio=document.getElementById('audio-'+id);if(audio&&p.role==='student'){if(present&&!state.studentsMuted)audio.play().catch(()=>{});else audio.pause();}}
+}
+async function loadMuteState(){
+ const {data,error}=await supabase.from('classroom_signals').select('payload').eq('class_id',state.classInfo.id).eq('signal_type','mute-all').order('created_at',{ascending:false}).limit(1).maybeSingle();
+ if(!error&&data?.payload){state.studentsMuted=!!data.payload.muted;state.tutorMutedAll=!!data.payload.muted;}
+ if(isStudent()&&!state.tutorPresent)state.studentsMuted=true;
+ updateControlButtons();
 }
 async function subscribeSignals(){
  state.channel=supabase.channel('classroom-signals-'+state.classInfo.id);
