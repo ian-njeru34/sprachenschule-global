@@ -157,7 +157,7 @@ function emptyStage(){const d=document.createElement('div');d.className='stage-e
 function showStage(node,title){const stage=$('presentationStage');stage.replaceChildren(node);const label=document.createElement('div');label.className='material-title';label.textContent=title;stage.append(label);}
 function createPeer(id){
  if(state.peers.has(id))return state.peers.get(id);
- const pc=new RTCPeerConnection(rtcConfig),peer={pc,polite:state.user.id.localeCompare(id)>0,makingOffer:false,ignoreOffer:false,isSettingRemoteAnswerPending:false};
+ const pc=new RTCPeerConnection(rtcConfig),peer={pc,polite:state.user.id.localeCompare(id)>0,makingOffer:false,ignoreOffer:false,isSettingRemoteAnswerPending:false,pendingCandidates:[]};
  state.peers.set(id,peer);
  if(state.localVideo)pc.addTrack(state.localVideo,new MediaStream([state.localVideo]));
  if(state.localAudio)pc.addTrack(state.localAudio,new MediaStream([state.localAudio]));
@@ -192,13 +192,14 @@ async function handleSignal(row){
  if(['offer','answer','ice'].includes(row.signal_type)){
   const peer=createPeer(row.sender_id),pc=peer.pc;
   try{
-   if(row.signal_type==='ice'){if(p.candidate)await pc.addIceCandidate(p.candidate);return;}
+   if(row.signal_type==='ice'){if(p.candidate){if(pc.remoteDescription)await pc.addIceCandidate(p.candidate);else peer.pendingCandidates.push(p.candidate);}return;}
    const description=p.description;if(!description)return;
    const readyForOffer=!peer.makingOffer&&(pc.signalingState==='stable'||peer.isSettingRemoteAnswerPending);
    const offerCollision=description.type==='offer'&&!readyForOffer;
    peer.ignoreOffer=!peer.polite&&offerCollision;if(peer.ignoreOffer)return;
    peer.isSettingRemoteAnswerPending=description.type==='answer';
    await pc.setRemoteDescription(description);peer.isSettingRemoteAnswerPending=false;
+   for(const candidate of peer.pendingCandidates.splice(0)){try{await pc.addIceCandidate(candidate);}catch(e){console.warn('Queued ICE candidate was rejected.',e);}}
    if(description.type==='offer'){await pc.setLocalDescription();await sendSignal('answer',{description:pc.localDescription},row.sender_id);}
   }catch(e){console.warn('Signal negotiation event ignored',e);}
   return;
