@@ -7,7 +7,7 @@ const state = {
  channel:null, peers:new Map(), participants:new Map(), streams:new Map(),
  localVideo:null, localAudio:null, screenTrack:null, screenSharers:new Set(), micOn:false, camOn:false,
  tutorPresent:false, studentsMuted:false, tutorMutedAll:false, hands:new Set(), heartbeatTimer:null,
- rosterTimer:null, signalsSub:null, joinedAt:null, activeMaterialId:null, presentationType:null,
+ rosterTimer:null, signalsSub:null, joinedAt:null, activeMaterialId:null, activeMaterialUrl:null, activeMaterialUrlExpiresAt:0, presentationType:null,
  pdf:null, pdfScale:.25, pdfPage:1, pdfRenderToken:0, mediaElement:null,
  attendanceId:null, recording:null, leaving:false
 };
@@ -295,7 +295,7 @@ function handleClassEvent(type,p,sender){
  if(type==='hand-clear'&&isTutor()){state.hands.clear();renderHands();}
  if(type==='mute-all'&&isStudent()){state.studentsMuted=!!p.muted;if(state.studentsMuted){setMic(false);roomStatus('The tutor has muted student microphones.');}else{roomStatus('The tutor has reopened student microphones.');}for(const [id,participant] of state.participants){if(participant.role==='student'){const audio=document.getElementById('audio-'+id);if(audio){if(state.studentsMuted)audio.pause();else audio.play().catch(()=>{});}}}updateControlButtons();}
  if(type==='screen-state'&&!isTutor()){if(p.active){state.screenSharers.add(sender);const existing=document.getElementById('tile-'+sender)?.querySelector('video');if(existing){existing.remove();showStage(existing,'Tutor screen share');}}else{state.screenSharers.delete(sender);$('presentationStage').replaceChildren(emptyStage());}}
- if(type==='material-open'&&p.id)openMaterial(p.id,false);
+ if(type==='material-open'&&p.id)openMaterial(p.id,false,null,p.url,p.expiresAt);
  if(type==='pdf-view'&&p.id===state.activeMaterialId)goPdfPage(p.page,false,p.scale);
  if(type==='material-control'&&p.id===state.activeMaterialId)applyMaterialControl(p);
 }
@@ -328,7 +328,10 @@ async function refreshParticipants(){
   // Realtime event. Replay the current presentation state directly to that student.
   if(isTutor()&&p.role==='student'&&!previous.has(id)){
    if(state.presentationType==='screen'&&state.screenTrack)void sendSignal('screen-state',{active:true},id);
-   else if(state.presentationType==='material'&&state.activeMaterialId)void sendSignal('material-open',{id:state.activeMaterialId},id);
+   else if(state.presentationType==='material'&&state.activeMaterialId){
+    if(isTutor()&&state.activeMaterialUrl&&state.activeMaterialUrlExpiresAt>Date.now()+60000)void sendSignal('material-open',{id:state.activeMaterialId,url:state.activeMaterialUrl,expiresAt:state.activeMaterialUrlExpiresAt},id);
+    else if(isTutor())void openMaterial(state.activeMaterialId,true,id);
+   }
   }
  }
  for(const id of [...state.peers.keys()])if(!next.has(id)){state.peers.get(id).pc.close();state.peers.delete(id);removeTile(id);document.getElementById('audio-'+id)?.remove();state.hands.delete(id);}
@@ -390,22 +393,36 @@ async function loadMaterials(){
  $('classMaterials').replaceChildren();
  visible.forEach(m=>{const row=document.createElement('div');row.className='material-row';const title=document.createElement('strong');title.textContent=m.title;const meta=document.createElement('div');meta.className='hint';meta.textContent=m.material_type+(m.is_hidden&&isTutor()?' · Hidden from students':'');row.append(title,meta);if(isTutor()){const btn=document.createElement('button');btn.className='btn btn-primary';btn.type='button';btn.textContent='Open on meeting screen';btn.addEventListener('click',()=>openMaterial(m.id,true));row.append(btn);} $('classMaterials').append(row);});
 }
-async function openMaterial(id,broadcast){
+async function openMaterial(id,broadcast,recipient=null,sharedUrl=null,sharedExpiresAt=0){
  const {data:m,error}=await supabase.from('class_materials').select('id,class_id,title,material_type,storage_path').eq('id',id).is('deleted_at',null).maybeSingle();
  if(error||!m||m.class_id!==state.classInfo.id){roomStatus('This material is unavailable for this class.');return;}
- if(broadcast)await sendSignal('material-open',{id:m.id});
- const {data:link,error:linkError}=await supabase.storage.from('class-materials').createSignedUrl(m.storage_path,300);
- if(linkError||!link?.signedUrl){roomStatus('The material could not be opened.');return;}
- state.activeMaterialId=m.id;state.presentationType='material';state.pdf=null;state.pdfRenderToken++;
+ let url=sharedUrl, expiresAt=Number(sharedExpiresAt)||0;
+ if(isTutor()){
+  if(state.activeMaterialId===m.id&&state.activeMaterialUrl&&state.activeMaterialUrlExpiresAt>Date.now()+60000){url=state.activeMaterialUrl;expiresAt=state.activeMaterialUrlExpiresAt;}
+  else if(!url||expiresAt<=Date.now()+60000){
+   const {data:link,error:linkError}=await supabase.storage.from('class-materials').createSignedUrl(m.storage_path,3600);
+   if(linkError||!link?.signedUrl){roomStatus('The material could not be opened.');return;}
+   url=link.signedUrl;expiresAt=Date.now()+3600000;
+  }
+ }else if(!url||expiresAt<=Date.now()+15000){
+  const {data:link,error:linkError}=await supabase.storage.from('class-materials').createSignedUrl(m.storage_path,3600);
+  if(linkError||!link?.signedUrl){roomStatus('The material could not be opened.');return;}
+  url=link.signedUrl;expiresAt=Date.now()+3600000;
+ }
+ if(!url){roomStatus('The material could not be opened.');return;}
+ if(state.activeMaterialId===m.id&&state.activeMaterialUrl===url&&state.presentationType==='material')return;
+ state.activeMaterialId=m.id;state.activeMaterialUrl=url;state.activeMaterialUrlExpiresAt=expiresAt;state.presentationType='material';
+ if(broadcast)await sendSignal('material-open',{id:m.id,url,expiresAt},recipient);
+ state.pdf=null;state.pdfRenderToken++;
  const stage=$('presentationStage');stage.replaceChildren();
  if(m.material_type==='audio'||m.material_type==='video'){
-  const media=document.createElement(m.material_type);media.src=link.signedUrl;media.controls=isTutor();media.autoplay=false;media.playsInline=true;
+  const media=document.createElement(m.material_type);media.src=url;media.controls=isTutor();media.autoplay=false;media.playsInline=true;
   media.style.width='100%';media.style.height='100%';media.style.objectFit='contain';media.id='presentedMedia';stage.append(media);state.mediaElement=media;
   if(isTutor()){media.addEventListener('play',()=>sendSignal('material-control',{id:m.id,action:'play',time:media.currentTime}));media.addEventListener('pause',()=>sendSignal('material-control',{id:m.id,action:'pause',time:media.currentTime}));media.addEventListener('seeked',()=>sendSignal('material-control',{id:m.id,action:'seek',time:media.currentTime}));}
  }else if((m.storage_path||'').toLowerCase().split('?')[0].endsWith('.pdf')){
-  await renderPdfMaterial(link.signedUrl,m.title,isTutor());
+  await renderPdfMaterial(url,m.title,isTutor());
  }else{
-  const pre=document.createElement('pre');pre.textContent='Loading notes…';stage.append(pre);try{const response=await fetch(link.signedUrl);if(!response.ok)throw new Error('Download failed');pre.textContent=await response.text();}catch{pre.textContent='These notes could not be displayed.';}
+  const pre=document.createElement('pre');pre.textContent='Loading notes…';stage.append(pre);try{const response=await fetch(url);if(!response.ok)throw new Error('Download failed');pre.textContent=await response.text();}catch{pre.textContent='These notes could not be displayed.';}
  }
 }
 async function renderPdfMaterial(url,title,leader){
