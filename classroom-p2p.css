@@ -7,3 +7,28 @@
 .recording-state{font-size:.78rem;color:#ffd1d1;text-align:center;min-height:18px}
 .recording-row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #edf0eb;font-size:.84rem}
 .recording-row a{color:#176b50;font-weight:700}
+
+/* Google Meet-style floating applause reactions */
+.presentation-stage .clap-float{
+ position:absolute;
+ z-index:30;
+ bottom:18px;
+ left:50%;
+ display:block;
+ font-size:clamp(30px,4vw,48px);
+ line-height:1;
+ pointer-events:none;
+ user-select:none;
+ filter:drop-shadow(0 3px 5px #0009);
+ transform:translateX(-50%);
+ animation:classroom-clap-float 2.35s cubic-bezier(.18,.72,.24,1) forwards;
+}
+@keyframes classroom-clap-float{
+ 0%{opacity:0;transform:translate(-50%,0) scale(.65) rotate(-8deg)}
+ 12%{opacity:1;transform:translate(-50%,-14px) scale(1.12) rotate(5deg)}
+ 72%{opacity:1;transform:translate(calc(-50% + 8px),-175px) scale(1) rotate(-5deg)}
+ 100%{opacity:0;transform:translate(calc(-50% - 10px),-245px) scale(.82) rotate(8deg)}
+}
+@media(prefers-reduced-motion:reduce){
+ .presentation-stage .clap-float{animation-duration:.01ms;opacity:1}
+}
