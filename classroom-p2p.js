@@ -5,7 +5,7 @@ const supabase = window.supabase?.createClient(window.SUPABASE_URL, window.SUPAB
 const state = {
  user:null, profile:null, classInfo:null, role:null, clientId:crypto.randomUUID(),
  channel:null, peers:new Map(), participants:new Map(), streams:new Map(),
- localVideo:null, localAudio:null, screenTrack:null, micOn:false, camOn:false,
+ localVideo:null, localAudio:null, screenTrack:null, screenSharers:new Set(), micOn:false, camOn:false,
  tutorPresent:false, studentsMuted:false, hands:new Set(), heartbeatTimer:null,
  rosterTimer:null, signalsSub:null, joinedAt:null, activeMaterialId:null,
  pdf:null, pdfScale:.25, pdfPage:1, pdfRenderToken:0, mediaElement:null,
@@ -81,7 +81,7 @@ async function startLocalMedia(){
   const constraints={audio:false,video:{width:{ideal:640,max:960},height:{ideal:360,max:540},frameRate:{ideal:18,max:24}}};
   const stream=await navigator.mediaDevices.getUserMedia(constraints);
   state.localVideo=stream.getVideoTracks()[0]||null;
-  if(state.localVideo){state.localVideo.enabled=true;addLocalTile();}
+  if(state.localVideo){state.localVideo.enabled=true;state.camOn=true;addLocalTile();}
  }catch(e){console.warn('Camera unavailable',e);roomStatus('Camera unavailable. You can still join by audio.');}
  if(isTutor()){
   try{const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});state.localAudio=stream.getAudioTracks()[0];state.micOn=!!state.localAudio;}
@@ -120,7 +120,7 @@ async function setMic(enabled){
   state.localAudio?.stop();state.localAudio=null;state.micOn=false;
   for(const [id,peer] of state.peers){peer.pc.getSenders().filter(s=>s.track?.kind==='audio').forEach(s=>peer.pc.removeTrack(s));}
  }
- updateControlButtons();for(const id of state.peers.keys())await renegotiate(id);
+ updateControlButtons();
 }
 async function setCamera(enabled){
  if(enabled===state.camOn)return;
@@ -129,7 +129,7 @@ async function setCamera(enabled){
    for(const [id,peer] of state.peers)peer.pc.addTrack(state.localVideo,new MediaStream([state.localVideo]));
   }catch(e){roomStatus('Camera permission was not granted or no camera is available.');return;}
  }else{state.localVideo?.stop();state.localVideo=null;state.camOn=false;document.querySelectorAll('#tile-'+state.user.id+' video').forEach(v=>v.remove());for(const [id,peer] of state.peers)peer.pc.getSenders().filter(s=>s.track?.kind==='video'&&s.track!==state.screenTrack).forEach(s=>peer.pc.removeTrack(s));}
- updateControlButtons();for(const id of state.peers.keys())await renegotiate(id);
+ updateControlButtons();
 }
 async function toggleShare(){
  if(!isTutor())return;
@@ -141,13 +141,12 @@ async function toggleShare(){
   for(const [id,peer] of state.peers)peer.pc.addTrack(state.screenTrack,new MediaStream([state.screenTrack]));
   state.screenTrack.onended=()=>stopShare();
   await sendSignal('screen-state',{active:true});
-  for(const id of state.peers.keys())await renegotiate(id);
  }catch(e){roomStatus('Screen sharing was cancelled or is not supported by this browser.');}
 }
 async function stopShare(){
  if(!state.screenTrack)return;const track=state.screenTrack;state.screenTrack=null;track.stop();
  for(const [id,peer] of state.peers)peer.pc.getSenders().filter(s=>s.track===track).forEach(s=>peer.pc.removeTrack(s));
- await sendSignal('screen-state',{active:false});for(const id of state.peers.keys())await renegotiate(id);
+ await sendSignal('screen-state',{active:false});
  $('presentationStage').replaceChildren(emptyStage());
 }
 function emptyStage(){const d=document.createElement('div');d.className='stage-empty';d.innerHTML='<div class="stage-empty-icon">◫</div><strong>Your lesson stage</strong><span>Your tutor’s screen or lesson material will appear here.</span>';return d;}
@@ -155,6 +154,10 @@ function showStage(node,title){const stage=$('presentationStage');stage.replaceC
 function createPeer(id){
  if(state.peers.has(id))return state.peers.get(id);
  const pc=new RTCPeerConnection(rtcConfig),peer={pc,polite:state.user.id.localeCompare(id)>0,makingOffer:false,ignoreOffer:false,isSettingRemoteAnswerPending:false};
+ state.peers.set(id,peer);
+ if(state.localVideo)pc.addTrack(state.localVideo,new MediaStream([state.localVideo]));
+ if(state.localAudio)pc.addTrack(state.localAudio,new MediaStream([state.localAudio]));
+ if(state.screenTrack)pc.addTrack(state.screenTrack,new MediaStream([state.screenTrack]));
  if(state.localVideo)pc.addTrack(state.localVideo,new MediaStream([state.localVideo]));
  if(state.localAudio)pc.addTrack(state.localAudio,new MediaStream([state.localAudio]));
  if(state.screenTrack)pc.addTrack(state.screenTrack,new MediaStream([state.screenTrack]));
@@ -167,12 +170,14 @@ function createPeer(id){
    let audio=document.getElementById('audio-'+id);if(!audio){audio=document.createElement('audio');audio.id='audio-'+id;audio.autoplay=true;audio.playsInline=true;audio.style.display='none';document.body.append(audio);}
    audio.srcObject=e.streams[0]||new MediaStream([track]);audio.play().catch(()=>roomStatus('Tap the page once to enable classroom sound.'));
   }else if(track.kind==='video'){
-   const tile=makeTile(id,participant.full_name);let video=tile.querySelector('video');if(!video){video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.srcObject=e.streams[0]||new MediaStream([track]);tile.prepend(video);}else video.srcObject=e.streams[0]||new MediaStream([track]);
+   const video=document.createElement('video');video.autoplay=true;video.playsInline=true;video.srcObject=e.streams[0]||new MediaStream([track]);
+   if(state.screenSharers.has(id)){showStage(video,'Tutor screen share');track.addEventListener('ended',()=>{if(state.screenSharers.has(id))$('presentationStage').replaceChildren(emptyStage());});}
+   else {const tile=makeTile(id,participant.full_name);const previous=tile.querySelector('video');if(previous)previous.remove();tile.prepend(video);}
   }
  };
  pc.onconnectionstatechange=()=>{const s=pc.connectionState;if(s==='failed'||s==='disconnected'){$('connectionState').textContent='● Reconnecting';}else if(s==='connected'){$('connectionState').textContent='● Connected';}};
  pc.onnegotiationneeded=async()=>{await renegotiate(id);};
- state.peers.set(id,peer);return peer;
+ return peer;
 }
 async function renegotiate(id){
  const peer=state.peers.get(id);if(!peer||peer.pc.signalingState==='closed')return;
@@ -206,7 +211,7 @@ function handleClassEvent(type,p,sender){
  if(type==='hand'){if(p.raised)state.hands.add(sender);else state.hands.delete(sender);renderHands();}
  if(type==='hand-clear'&&isTutor()){state.hands.clear();renderHands();}
  if(type==='mute-all'&&isStudent()){state.studentsMuted=true;setMic(false);roomStatus('The tutor has muted student microphones.');}
- if(type==='screen-state'&&!isTutor()&&!p.active){$('presentationStage').replaceChildren(emptyStage());}
+ if(type==='screen-state'&&!isTutor()){if(p.active)state.screenSharers.add(sender);else{state.screenSharers.delete(sender);$('presentationStage').replaceChildren(emptyStage());}}
  if(type==='material-open'&&p.id)openMaterial(p.id,false);
  if(type==='pdf-view'&&p.id===state.activeMaterialId)goPdfPage(p.page,false,p.scale);
  if(type==='material-control'&&p.id===state.activeMaterialId)applyMaterialControl(p);
@@ -227,7 +232,7 @@ async function refreshParticipants(){
  $('attendanceCount').textContent=next.size+' present';$('participantCount').textContent=next.size+' / 7';
  const tutor=next.has(state.classInfo.teacher_id);
  updateTutorPresence(tutor);
- for(const [id,p] of next){if(id!==state.user.id&&state.user.id.localeCompare(id)>0){const peer=state.peers.get(id);if(peer&&peer.pc.signalingState==='stable'&&peer.pc.connectionState!=='connected'&&!peer.makingOffer&&peer.pc.getSenders().length===0)await renegotiate(id);}}
+ for(const [id,p] of next){if(id!==state.user.id&&state.user.id.localeCompare(id)>0){const peer=state.peers.get(id);if(peer&&peer.pc.signalingState==='stable'&&peer.pc.connectionState!=='connected'&&!peer.makingOffer)await renegotiate(id);}}
 }
 function updateTutorPresence(present){
  const changed=state.tutorPresent!==present;state.tutorPresent=present;
