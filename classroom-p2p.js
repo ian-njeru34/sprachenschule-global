@@ -25,7 +25,7 @@ function sendSignal(type,payload,recipient=null){
 async function getSession(){const {data:{session},error}=await supabase.auth.getSession();if(error||!session)throw new Error('Please sign in with your Sprachenschule account first.');return session;}
 async function initialize(){
  $('year').textContent=new Date().getFullYear();
- const params=new URLSearchParams(location.search);$('roomName').value=params.get('room')||'';
+ const params=new URLSearchParams(location.search);$('roomName').value=params.get('name')||params.get('room')||'';
  $('menuToggle').addEventListener('click',()=>{const nav=$('primaryNav');const open=nav.classList.toggle('mobile-open');$('menuToggle').setAttribute('aria-expanded',String(open));});
  $('logoutBtn').addEventListener('click',async()=>{await supabase.auth.signOut();location.href='school.html';});
  try{
@@ -42,7 +42,7 @@ async function initialize(){
   $('dashboardLink').href=profile.role==='tutor'||profile.role==='teacher'?'teacher.html':'dashboard.html';
   $('backDashboardBtn').href=$('dashboardLink').href;
   status('Signed in. Enter the classroom name from your scheduled lesson.','ok');
-  if(params.get('room')) $('joinForm').requestSubmit();
+  if(params.get('class')||params.get('room')) $('joinForm').requestSubmit();
  }catch(e){status(e.message,'error');if(/sign in|signed in/i.test(e.message))setTimeout(()=>location.href='school.html',1500);}
 }
 async function joinClass(event){
