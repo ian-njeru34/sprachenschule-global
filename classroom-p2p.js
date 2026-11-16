@@ -14,6 +14,8 @@ const state = {
 const rtcConfig={iceTransportPolicy:'all',iceServers:[{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'}]};
 async function configureTurnRelay(){
  try{
+  const hint=$('networkHint');
+  if(hint)hint.textContent='Preparing secure media relay credentials…';
   const session=await getSession();
   const response=await fetch('/api/classroom-turn-credentials',{
    method:'POST',
@@ -21,14 +23,21 @@ async function configureTurnRelay(){
    body:JSON.stringify({class_id:state.classInfo.id}),
    cache:'no-store'
   });
-  if(!response.ok)throw new Error('TURN credentials unavailable ('+response.status+').');
+  if(!response.ok){
+   let detail='TURN credential service returned HTTP '+response.status+'.';
+   try{const body=await response.json();if(body?.error)detail=body.error+' (HTTP '+response.status+').';}catch{}
+   throw new Error(detail);
+  }
   const data=await response.json();
   if(!Array.isArray(data.iceServers)||!data.iceServers.length)throw new Error('TURN server list was empty.');
   rtcConfig.iceServers=data.iceServers;
   console.info('[CLASSROOM] Cloudflare TURN credentials loaded; direct connections remain preferred.');
+  if(hint)hint.textContent='Cloudflare TURN is configured. Direct browser connections are preferred; the relay is available automatically when a direct route is blocked.';
   return true;
  }catch(error){
   console.warn('[CLASSROOM] TURN relay unavailable; continuing with STUN direct connectivity.',error.message);
+  const hint=$('networkHint');
+  if(hint)hint.textContent='TURN setup failed: '+error.message+' Media may fail on restrictive networks. Please contact the school administrator.';
   rtcConfig.iceServers=[{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}];
   return false;
  }
@@ -220,6 +229,8 @@ async function updateConnectionPath(pc){
   const local=stats.get(pair.localCandidateId),remote=stats.get(pair.remoteCandidateId);
   const viaRelay=local?.candidateType==='relay'||remote?.candidateType==='relay';
   $('connectionState').textContent=viaRelay?'● Connected · TURN relay':'● Connected · Direct';
+  const hint=$('networkHint');
+  if(hint)hint.textContent=viaRelay?'Media is flowing through Cloudflare TURN relay.':'Media is using a direct browser connection. Cloudflare TURN remains available as a fallback.';
  }catch(error){console.debug('Could not inspect selected ICE route.',error);}
 }
 function createPeer(id){
