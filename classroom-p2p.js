@@ -131,15 +131,28 @@ function updateControlButtons(){
  $('participantCount').textContent=state.participants.size+' / 7';
 }
 async function setMic(enabled){
- if(enabled&&isStudent()&&(!state.tutorPresent||state.studentsMuted)){roomStatus('Your microphone is locked until the tutor is present and has not muted the class.');return;}
+ if(enabled&&isStudent()&&(!state.tutorPresent||state.studentsMuted)){roomStatus('No host present');return;}
  if(enabled===state.micOn)return;
  if(enabled){
-  try{const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});state.localAudio=stream.getAudioTracks()[0];state.micOn=true;
-   for(const [id,peer] of state.peers){peer.pc.addTrack(state.localAudio,new MediaStream([state.localAudio]));}
-   addRecordingLocalAudio(state.localAudio);
+  try{
+   // Students request microphone access only after they deliberately press Unmute.
+   const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
+   const track=stream.getAudioTracks()[0];
+   // The tutor may have left while the browser permission prompt was open.
+   if(isStudent()&&(!state.tutorPresent||state.studentsMuted)){
+    track?.stop();stream.getTracks().forEach(t=>t.stop());state.localAudio=null;state.micOn=false;
+    roomStatus('No host present');updateControlButtons();return;
+   }
+   state.localAudio=track;state.micOn=!!track;
+   if(track){
+    for(const [id,peer] of state.peers){peer.pc.addTrack(track,new MediaStream([track]));}
+    addRecordingLocalAudio(track);
+   }
   }catch(e){roomStatus('Microphone permission was not granted or no microphone is available.');return;}
  }else{
-  state.localAudio?.stop();state.localAudio=null;state.micOn=false;
+  // Stop and detach the outgoing audio track immediately when muted or when the host leaves.
+  const track=state.localAudio;state.localAudio=null;state.micOn=false;
+  if(track){track.enabled=false;track.stop();}
   for(const [id,peer] of state.peers){peer.pc.getSenders().filter(s=>s.track?.kind==='audio').forEach(s=>peer.pc.removeTrack(s));}
  }
  updateControlButtons();
@@ -257,7 +270,7 @@ async function refreshParticipants(){
 function updateTutorPresence(present){
  const changed=state.tutorPresent!==present;state.tutorPresent=present;
  if(isStudent()){
-  if(!present){state.studentsMuted=true;setMic(false);roomStatus('Assigned tutor is absent. Student microphones are disabled.');}
+  if(!present){state.studentsMuted=true;void setMic(false);roomStatus('No host present');}
   else if(changed){state.studentsMuted=false;roomStatus('Tutor is present. Your microphone is off until you choose to unmute.');}
   else if(!state.studentsMuted){roomStatus('Tutor is present. Your microphone is off until you choose to unmute.');}
   updateControlButtons();
@@ -284,7 +297,7 @@ async function subscribeLeases(){
 async function heartbeat(){
  if(state.leaving||!state.classInfo)return;
  const {data,error}=await supabase.rpc('classroom_heartbeat',{p_class_id:state.classInfo.id,p_client_id:state.clientId});
- if(error){roomStatus('Classroom access could not be renewed. Your microphone is disabled.');await leaveClass(true);return;}
+ if(error){if(isStudent()){state.studentsMuted=true;await setMic(false);}roomStatus('Classroom access could not be renewed. Your microphone is disabled.');await leaveClass(true);return;}
  updateTutorPresence(!!data.tutor_present);
  if(data.participant_count>7){await leaveClass(true);return;}
 }
