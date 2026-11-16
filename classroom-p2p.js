@@ -9,7 +9,7 @@ const state = {
  tutorPresent:false, studentsMuted:false, tutorMutedAll:false, hands:new Set(), heartbeatTimer:null,
  rosterTimer:null, signalsSub:null, joinedAt:null, activeMaterialId:null,
  pdf:null, pdfScale:.25, pdfPage:1, pdfRenderToken:0, mediaElement:null,
- attendanceId:null, leaving:false
+ attendanceId:null, recording:null, leaving:false
 };
 const rtcConfig={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]};
 const isTutor=()=>['tutor','teacher'].includes(state.role);
@@ -62,6 +62,7 @@ async function joinClass(event){
   $('shareBtn').classList.toggle('hidden',!isTutor());
   $('muteAllBtn').classList.toggle('hidden',!isTutor());
   $('clearHandsBtn').classList.toggle('hidden',!isTutor());
+  $('recordBtn').classList.toggle('hidden',!isTutor());
   $('backDashboardBtn').textContent=isTutor()?'← Tutor dashboard':'← Student dashboard';
   status('Connected to the authorised class.','ok');
   await startLocalMedia();
@@ -71,6 +72,7 @@ async function joinClass(event){
   await subscribeLeases();
   await refreshParticipants();
   await loadMaterials();
+  await loadRecordings();
   state.heartbeatTimer=setInterval(heartbeat,12000);
   state.rosterTimer=setInterval(refreshParticipants,8000);
   heartbeat();
@@ -116,6 +118,7 @@ async function setMic(enabled){
  if(enabled){
   try{const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});state.localAudio=stream.getAudioTracks()[0];state.micOn=true;
    for(const [id,peer] of state.peers){peer.pc.addTrack(state.localAudio,new MediaStream([state.localAudio]));}
+   addRecordingLocalAudio(state.localAudio);
   }catch(e){roomStatus('Microphone permission was not granted or no microphone is available.');return;}
  }else{
   state.localAudio?.stop();state.localAudio=null;state.micOn=false;
@@ -319,8 +322,131 @@ async function setPdfScale(scale,broadcast){state.pdfScale=scale;if(state.render
 async function fitPdfWidth(broadcast){if(!state.pdf)return;const p=await state.pdf.getPage(1);const base=p.getViewport({scale:1});const width=Math.max(120,$('presentationStage').clientWidth-30);await setPdfScale(Math.max(.25,Math.min(3,width/base.width)),broadcast);}
 function goPdfPage(page,broadcast,scale){if(!state.pdf)return;if(Number.isFinite(scale)&&Math.abs(scale-state.pdfScale)>.02)setPdfScale(scale,false);state.pdfPage=Math.max(1,Math.min(state.pdf.numPages,Number(page)||1));const canvases=$('presentationStage').querySelectorAll('.pdf-page');const target=canvases[state.pdfPage-1];if(target)target.scrollIntoView({block:'start'});}
 function applyMaterialControl(p){const m=state.mediaElement;if(!m||p.id!==state.activeMaterialId)return;if(Number.isFinite(p.time)&&Math.abs(m.currentTime-p.time)>.8)m.currentTime=p.time;if(p.action==='play')m.play().catch(()=>{});if(p.action==='pause')m.pause();}
+
+function addRecordingLocalAudio(track){
+ const rec=state.recording;if(!rec||!track)return;
+ try{const source=rec.audioCtx.createMediaStreamSource(new MediaStream([track]));source.connect(rec.audioDestination);rec.audioSources.push(source);}catch(e){console.warn('Could not add microphone to recording mix.',e);}
+}
+function connectRecordingMediaElement(el){
+ const rec=state.recording;if(!rec||!el||rec.mediaElements.has(el))return;
+ try{
+  const source=rec.audioCtx.createMediaElementSource(el);
+  source.connect(rec.audioDestination);
+  source.connect(rec.audioCtx.destination);
+  rec.audioSources.push(source);rec.mediaElements.add(el);
+ }catch(e){console.warn('A media element could not be included in the recording audio mix.',e);}
+}
+async function startRecording(){
+ if(!isTutor()||state.recording)return;
+ if(!window.MediaRecorder||!HTMLCanvasElement.prototype.captureStream){roomStatus('This browser does not support classroom recording. Try a current version of Chrome or Edge.');return;}
+ $('recordBtn').disabled=true;
+ try{
+  const {data:row,error}=await supabase.from('class_recordings').insert({class_id:state.classInfo.id,requested_by:state.user.id,status:'recording',started_at:new Date().toISOString()}).select('id').single();
+  if(error||!row)throw new Error(error?.message||'Could not create the recording record.');
+  const canvas=document.createElement('canvas');canvas.width=1280;canvas.height=720;
+  const ctx=canvas.getContext('2d',{alpha:false});
+  const canvasStream=canvas.captureStream(15);
+  const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  await audioCtx.resume();
+  const audioDestination=audioCtx.createMediaStreamDestination();
+  const audioSources=[],mediaElements=new WeakSet();
+  const rec={id:row.id,recorder:null,chunks:[],canvas,ctx,canvasStream,audioCtx,audioDestination,audioSources,mediaElements,startedAt:Date.now(),frame:0,observer:null,finished:null};
+  state.recording=rec;
+  if(state.localAudio)addRecordingLocalAudio(state.localAudio);
+  document.querySelectorAll('audio, #presentedMedia').forEach(connectRecordingMediaElement);
+  rec.observer=new MutationObserver(()=>document.querySelectorAll('audio, #presentedMedia').forEach(connectRecordingMediaElement));
+  rec.observer.observe(document.body,{childList:true,subtree:true});
+  const mimeTypes=['video/webm;codecs=vp8,opus','video/webm;codecs=vp8','video/webm'];
+  const mimeType=mimeTypes.find(type=>MediaRecorder.isTypeSupported(type))||'';
+  const stream=new MediaStream([...canvasStream.getVideoTracks(),...audioDestination.stream.getAudioTracks()]);
+  const recorder=new MediaRecorder(stream,mimeType?{mimeType,videoBitsPerSecond:1200000}: {videoBitsPerSecond:1200000});
+  rec.recorder=recorder;
+  let finish;
+  rec.finished=new Promise(resolve=>finish=resolve);
+  recorder.ondataavailable=event=>{
+   if(event.data&&event.data.size){rec.chunks.push(event.data);const bytes=rec.chunks.reduce((sum,chunk)=>sum+chunk.size,0);if(bytes>45*1024*1024&&recorder.state==='recording'){roomStatus('Recording reached the 45 MB safety limit and is being saved.');recorder.stop();}}
+  };
+  recorder.onerror=event=>{console.warn('Recording error',event.error);roomStatus('The browser reported a recording error. The recording may be incomplete.');};
+  recorder.onstop=async()=>{
+   cancelAnimationFrame(rec.frame);rec.observer?.disconnect();rec.canvasStream.getTracks().forEach(track=>track.stop());
+   rec.audioSources.forEach(source=>{try{source.disconnect();}catch{}});
+   try{await rec.audioCtx.close();}catch{}
+   const blob=new Blob(rec.chunks,{type:recorder.mimeType||'video/webm'});
+   const duration=Math.max(1,Math.round((Date.now()-rec.startedAt)/1000));
+   const path=state.classInfo.id+'/recordings/'+rec.id+'.webm';
+   try{
+    if(!blob.size||blob.size>50*1024*1024)throw new Error('Recording file is empty or exceeds the 50 MB storage limit.');
+    const {error:uploadError}=await supabase.storage.from('class-materials').upload(path,blob,{contentType:blob.type||'video/webm',upsert:false});
+    if(uploadError)throw new Error(uploadError.message);
+    const {error:updateError}=await supabase.from('class_recordings').update({status:'completed',storage_path:path,mime_type:blob.type||'video/webm',file_size:blob.size,duration_seconds:duration,completed_at:new Date().toISOString(),error_message:null}).eq('id',rec.id);
+    if(updateError)throw new Error(updateError.message);
+    roomStatus('Recording saved to the school’s private class recordings.');
+   }catch(error){
+    await supabase.from('class_recordings').update({status:'failed',completed_at:new Date().toISOString(),error_message:String(error.message||error).slice(0,1000)}).eq('id',rec.id);
+    roomStatus('Recording could not be saved: '+(error.message||'storage error'));
+   }finally{
+    if(state.recording===rec)state.recording=null;
+    $('recordBtn').disabled=false;$('recordBtn').classList.remove('recording');$('recordBtn').textContent='⏺';
+    $('recordBtn').setAttribute('aria-label','Start class recording');$('recordBtn').title='Start class recording';
+    await loadRecordings();finish();
+   }
+  };
+  const draw=()=>{
+   if(state.recording!==rec)return;
+   ctx.fillStyle='#101b19';ctx.fillRect(0,0,1280,720);
+   const stage=$('presentationStage');
+   const main=stage.querySelector('video')||stage.querySelector('.pdf-page')||stage.querySelector('canvas');
+   if(main){try{ctx.drawImage(main,0,0,1280,610);}catch{}}
+   else{ctx.fillStyle='#dbe8df';ctx.font='bold 34px sans-serif';ctx.fillText('Sprachenschule classroom',44,80);}
+   const tiles=[...document.querySelectorAll('#videoGrid .video-tile')];
+   const width=180,height=104,gap=16,total=tiles.length*(width+gap)-gap;
+   let x=Math.max(24,(1280-total)/2);
+   for(const tile of tiles){
+    ctx.fillStyle='#263632';ctx.fillRect(x,625,width,height);
+    const video=tile.querySelector('video');
+    if(video&&video.readyState>=2){try{ctx.drawImage(video,x,625,width,height);}catch{}}
+    ctx.fillStyle='#fff';ctx.font='16px sans-serif';ctx.fillText((tile.querySelector('.tile-name')?.textContent||'Participant').slice(0,22),x+6,713);
+    x+=width+gap;if(x+width>1256)break;
+   }
+   ctx.fillStyle='#fff';ctx.font='bold 18px sans-serif';ctx.fillText('Sprachenschule · '+(state.classInfo.title||'Live lesson'),24,28);
+   rec.frame=requestAnimationFrame(draw);
+  };
+  draw();recorder.start(5000);
+  $('recordBtn').classList.add('recording');$('recordBtn').textContent='⏹';$('recordBtn').setAttribute('aria-label','Stop and save class recording');$('recordBtn').title='Stop and save class recording';
+  roomStatus('Recording is active on this tutor device. Keep this browser open until it is saved.');
+ }catch(error){
+  state.recording=null;$('recordBtn').disabled=false;
+  roomStatus('Recording could not start: '+(error.message||'browser error'));
+ }
+}
+async function stopRecording(){
+ const rec=state.recording;if(!rec)return;
+ roomStatus('Stopping recording and saving it to the school…');
+ if(rec.recorder&&rec.recorder.state!=='inactive')rec.recorder.stop();
+ if(rec.finished)await rec.finished;
+}
+async function loadRecordings(){
+ if(!state.classInfo)return;
+ const box=$('classRecordings');
+ const {data,error}=await supabase.from('class_recordings').select('id,status,storage_path,mime_type,file_size,duration_seconds,created_at').eq('class_id',state.classInfo.id).order('created_at',{ascending:false}).limit(20);
+ if(error){box.textContent='Recordings could not be loaded: '+error.message;return;}
+ if(!data?.length){box.textContent='No class recordings yet.';return;}
+ box.replaceChildren();
+ for(const recording of data){
+  const row=document.createElement('div');row.className='recording-row';
+  const label=document.createElement('span');label.textContent=recording.status==='completed'?'Class recording · '+(recording.duration_seconds||0)+' sec':recording.status==='recording'?'Recording in progress':'Recording '+recording.status;
+  row.append(label);
+  if(recording.status==='completed'&&recording.storage_path){
+   const {data:link,error:linkError}=await supabase.storage.from('class-materials').createSignedUrl(recording.storage_path,3600);
+   if(!linkError&&link?.signedUrl){const a=document.createElement('a');a.href=link.signedUrl;a.download='sprachenschule-class-recording.webm';a.textContent='Download';row.append(a);}
+  }
+  box.append(row);
+ }
+}
+
 async function leaveClass(redirect){
  if(state.leaving)return;state.leaving=true;
+ if(state.recording)await stopRecording();
  clearInterval(state.heartbeatTimer);clearInterval(state.rosterTimer);
  try{await closeAttendance();if(state.classInfo)await supabase.rpc('classroom_leave',{p_class_id:state.classInfo.id,p_client_id:state.clientId});}catch{}
  if(state.channel)await supabase.removeChannel(state.channel);if(state.leaseChannel)await supabase.removeChannel(state.leaseChannel);
@@ -340,6 +466,7 @@ $('clapBtn').addEventListener('click',()=>{showClap(state.user.id);sendSignal('c
 $('raiseHandBtn').addEventListener('click',()=>{const raised=!state.hands.has(state.user.id);if(raised)state.hands.add(state.user.id);else state.hands.delete(state.user.id);renderHands();$('raiseHandBtn').setAttribute('aria-pressed',String(raised));sendSignal('hand',{raised});});
 $('clearHandsBtn').addEventListener('click',()=>{state.hands.clear();renderHands();sendSignal('hand-clear',{});});
 $('muteAllBtn').addEventListener('click',()=>{state.tutorMutedAll=!state.tutorMutedAll;$('muteAllBtn').textContent=state.tutorMutedAll?'🔊':'🔇';$('muteAllBtn').setAttribute('aria-label',state.tutorMutedAll?'Allow student microphones':'Mute all students');sendSignal('mute-all',{muted:state.tutorMutedAll});});
-window.addEventListener('beforeunload',()=>{if(state.classInfo){navigator.sendBeacon?.(window.SUPABASE_URL+'/rest/v1/rpc/classroom_leave',new Blob([JSON.stringify({p_class_id:state.classInfo.id,p_client_id:state.clientId})],{type:'application/json'}));}});
+$('recordBtn').addEventListener('click',async()=>{if(state.recording)await stopRecording();else await startRecording();});
+window.addEventListener('beforeunload',event=>{if(state.recording){event.preventDefault();event.returnValue='A class recording is still being saved.';}if(state.classInfo){navigator.sendBeacon?.(window.SUPABASE_URL+'/rest/v1/rpc/classroom_leave',new Blob([JSON.stringify({p_class_id:state.classInfo.id,p_client_id:state.clientId})],{type:'application/json'}));}});
 initialize();
 })();
