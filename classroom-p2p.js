@@ -300,7 +300,18 @@ function handleClassEvent(type,p,sender){
  if(type==='material-control'&&p.id===state.activeMaterialId)applyMaterialControl(p);
 }
 function addChat(name,message){const log=$('chatLog');if(log.querySelector('.muted'))log.replaceChildren();const div=document.createElement('div');div.className='chat-message';const strong=document.createElement('strong');strong.textContent=name;const body=document.createElement('span');body.textContent=message;div.append(strong,body);log.append(div);log.scrollTop=log.scrollHeight;}
-function showClap(sender){const tile=document.getElementById('tile-'+sender)||$('presentationStage');const el=document.createElement('span');el.className='clap-float';el.textContent='👏';tile.append(el);setTimeout(()=>el.remove(),1400);}
+function showClap(sender){
+ const stage=$('presentationStage');
+ if(!stage)return;
+ const el=document.createElement('span');
+ el.className='clap-float';
+ el.textContent='👏';
+ el.setAttribute('aria-hidden','true');
+ el.style.left=(14+Math.random()*72)+'%';
+ stage.append(el);
+ el.addEventListener('animationend',()=>el.remove(),{once:true});
+ setTimeout(()=>el.remove(),2600);
+}
 function renderHands(){document.querySelectorAll('.raised-hand-indicator').forEach(n=>n.remove());for(const id of state.hands){const tile=document.getElementById('tile-'+id);if(tile){const el=document.createElement('span');el.className='raised-hand-indicator';el.textContent='✋';tile.append(el);}}$('raisedHandCount').textContent=state.hands.size;}
 async function refreshParticipants(){
  if(!state.classInfo)return;
