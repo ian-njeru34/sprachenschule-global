@@ -242,7 +242,9 @@ function createPeer(id){
  if(state.screenTrack)pc.addTrack(state.screenTrack,new MediaStream([state.screenTrack]));
  pc.onicecandidate=e=>{if(e.candidate)sendSignal('ice',{candidate:e.candidate.toJSON()},id);};
  pc.ontrack=e=>{
-  const participant=state.participants.get(id);if(!participant)return;
+  // A remote track may arrive just before the next roster refresh. Preserve it;
+  // participant metadata is not required to attach the media element.
+  const participant=state.participants.get(id)||{full_name:'Participant',role:'unknown'};
   const track=e.track;
   if(track.kind==='audio'){
    if(participant.role==='student'&&(!state.tutorPresent||state.studentsMuted)){track.enabled=false;return;}
