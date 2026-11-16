@@ -96,7 +96,8 @@ async function joinClass(event){
   const {data:lease,error:joinError}=await supabase.rpc('classroom_join',{p_class_id:c.id,p_client_id:state.clientId});
   if(joinError)throw new Error(joinError.message);
   state.classInfo=c;state.role=lease.role;state.tutorPresent=!!lease.tutor_present;state.joinedAt=new Date().toISOString();
-  await configureTurnRelay();\n  $('roomTitle').textContent=c.title||roomName.replace(/[-_]/g,' ');
+  await configureTurnRelay();
+  $('roomTitle').textContent=c.title||roomName.replace(/[-_]/g,' ');
   $('joinCard').classList.add('hidden');$('roomArea').classList.remove('hidden');
   $('shareBtn').classList.toggle('hidden',!isTutor());
   $('muteAllBtn').classList.toggle('hidden',!isTutor());
