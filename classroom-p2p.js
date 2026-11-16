@@ -11,7 +11,28 @@ const state = {
  pdf:null, pdfScale:.25, pdfPage:1, pdfRenderToken:0, mediaElement:null,
  attendanceId:null, recording:null, leaving:false
 };
-const rtcConfig={iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]};
+const rtcConfig={iceTransportPolicy:'all',iceServers:[{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'}]};
+async function configureTurnRelay(){
+ try{
+  const session=await getSession();
+  const response=await fetch('/api/classroom-turn-credentials',{
+   method:'POST',
+   headers:{'Content-Type':'application/json','Authorization':'Bearer '+session.access_token},
+   body:JSON.stringify({class_id:state.classInfo.id}),
+   cache:'no-store'
+  });
+  if(!response.ok)throw new Error('TURN credentials unavailable ('+response.status+').');
+  const data=await response.json();
+  if(!Array.isArray(data.iceServers)||!data.iceServers.length)throw new Error('TURN server list was empty.');
+  rtcConfig.iceServers=data.iceServers;
+  console.info('[CLASSROOM] Cloudflare TURN credentials loaded; direct connections remain preferred.');
+  return true;
+ }catch(error){
+  console.warn('[CLASSROOM] TURN relay unavailable; continuing with STUN direct connectivity.',error.message);
+  rtcConfig.iceServers=[{urls:'stun:stun.cloudflare.com:3478'},{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}];
+  return false;
+ }
+}
 const isTutor=()=>['tutor','teacher'].includes(state.role);
 const isStaff=()=>['registrar','admin'].includes(state.role);
 const isStudent=()=>state.role==='student';
@@ -75,7 +96,7 @@ async function joinClass(event){
   const {data:lease,error:joinError}=await supabase.rpc('classroom_join',{p_class_id:c.id,p_client_id:state.clientId});
   if(joinError)throw new Error(joinError.message);
   state.classInfo=c;state.role=lease.role;state.tutorPresent=!!lease.tutor_present;state.joinedAt=new Date().toISOString();
-  $('roomTitle').textContent=c.title||roomName.replace(/[-_]/g,' ');
+  await configureTurnRelay();\n  $('roomTitle').textContent=c.title||roomName.replace(/[-_]/g,' ');
   $('joinCard').classList.add('hidden');$('roomArea').classList.remove('hidden');
   $('shareBtn').classList.toggle('hidden',!isTutor());
   $('muteAllBtn').classList.toggle('hidden',!isTutor());
