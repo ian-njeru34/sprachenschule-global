@@ -3,31 +3,62 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow">
-<title>Classroom upgrade | Sprachenschule</title>
-<style>
-:root{color-scheme:light;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f6f8;color:#18212b}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px}
-main{width:min(620px,100%);background:#fff;border:1px solid #e2e8ee;border-radius:20px;padding:clamp(26px,5vw,48px);box-shadow:0 18px 60px #172b3d12}
-.brand{font-weight:750;letter-spacing:.02em;color:#153b59;font-size:1.1rem}
-h1{font-size:clamp(1.7rem,5vw,2.3rem);line-height:1.15;margin:30px 0 14px}
-p{line-height:1.65;color:#526170;margin:0 0 16px}
-.status{display:inline-flex;align-items:center;gap:9px;border-radius:99px;background:#fff4df;color:#85500b;padding:8px 12px;font-size:.85rem;font-weight:650}
-.dot{width:8px;height:8px;border-radius:50%;background:#d58b18}
-a{display:inline-block;margin-top:14px;color:#145b8b;font-weight:650;text-decoration:none}
-a:hover{text-decoration:underline}
-.small{font-size:.9rem;margin-top:26px;color:#778491}
-</style>
+<meta name="theme-color" content="#173d35">
+<title>Virtual Classroom | Sprachenschule</title>
+<link rel="icon" type="image/png" href="/logo.png">
+<link rel="apple-touch-icon" href="/logo.png">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="classroom-p2p.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 </head>
-<body>
-<main>
-<div class="brand">Sprachenschule</div>
-<h1>We’re upgrading our virtual classroom</h1>
-<div class="status"><span class="dot"></span> Classroom temporarily unavailable</div>
-
-<p>Your scheduled lessons and school account remain in place. Please return to your dashboard for updates from the school.</p>
-<a href="/dashboard.html">Return to student dashboard</a>
-<p class="small">Language · Culture · Opportunity</p>
+<body class="classroom-page">
+<div class="utility-bar"><div class="container utility-inner"><span aria-hidden="true"></span><div><a href="school.html">Login</a><span aria-hidden="true">·</span><a href="shop.html">Library</a></div></div></div>
+<header class="site-header"><div class="container"><div class="nav-wrap">
+<a class="brand" href="/home"><img src="logo.png" alt="Sprachenschule logo"><span class="brand-name">Sprachenschule<small>Language · Culture · Opportunity</small></span></a>
+<button class="menu-toggle" id="menuToggle" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
+<nav class="primary-nav" id="primaryNav" aria-label="Main navigation"><a href="/home">Home</a><a href="courses.html">Courses</a><a href="dashboard.html">Dashboard</a><a href="classroom.html" aria-current="page">Virtual classroom</a><a href="contact.html">Contact</a></nav>
+<div class="nav-actions"><a class="btn btn-primary nav-enquire" id="dashboardLink" href="dashboard.html">My dashboard</a><button class="btn btn-outline" id="logoutBtn" type="button">Logout</button></div>
+</div></div></header>
+<section class="classroom-hero"><div class="container"><span class="eyebrow">ONLINE LEARNING · LIVE</span><h1>Your classroom, right here.</h1><p>Meet your tutor and classmates, practise speaking, follow lesson presentations and ask questions — all inside Sprachenschule.</p></div></section>
+<main class="container classroom-shell">
+<section class="join-card" id="joinCard">
+<h2>Join your lesson</h2><p class="muted">Use your existing Sprachenschule account. Your scheduled class and enrolment are checked before you enter.</p>
+<form id="joinForm" class="join-row">
+<div class="field"><label for="roomName">Classroom name</label><input id="roomName" name="roomName" maxlength="80" pattern="[A-Za-z0-9_-]+" required placeholder="Your scheduled classroom"></div>
+<div class="field"><label for="displayName">Your display name</label><input id="displayName" name="displayName" maxlength="80" required placeholder="Your name"></div>
+<button class="btn btn-primary" id="joinBtn" type="submit">Join classroom ↗</button>
+</form>
+<div id="status" class="status" role="status">Checking your school sign-in…</div>
+<p class="hint">Allow camera and microphone access when requested. Use headphones where possible. The classroom supports up to seven participants.</p>
+</section>
+<section id="roomArea" class="room-layout hidden" aria-label="Live classroom">
+<div class="stage">
+<div class="stage-top"><strong id="roomTitle">Live classroom</strong><div class="stage-actions"><span class="live-pill" id="connectionState">● Connecting</span><span class="live-pill" id="participantCount">1 / 7</span><a class="btn btn-outline" id="backDashboardBtn" href="dashboard.html">← Dashboard</a></div></div>
+<section class="attendance-strip"><div class="attendance-heading"><strong>Attendance</strong><span id="attendanceCount">1 present</span></div><div id="attendanceList" class="attendance-list"></div></section>
+<div class="presentation-stage" id="presentationStage"><div class="stage-empty" id="stageEmpty"><div class="stage-empty-icon">◫</div><strong>Your lesson stage</strong><span>Your tutor’s screen or lesson material will appear here.</span></div></div>
+<div id="videoGrid" class="video-grid" aria-label="Participants"></div>
+<div class="controls">
+<button class="control-btn is-inactive" id="micBtn" type="button" aria-label="Unmute microphone" title="Microphone off" aria-pressed="false">🎙</button>
+<button class="control-btn is-inactive" id="camBtn" type="button" aria-label="Turn camera on" title="Camera off" aria-pressed="false">📹</button>
+<button class="control-btn hidden" id="shareBtn" type="button" aria-label="Share screen" title="Share screen">▣</button>
+<button class="control-btn" id="clapBtn" type="button" aria-label="Clap" title="Applaud the class">👏</button>
+<button class="control-btn" id="raiseHandBtn" type="button" aria-label="Raise hand" title="Raise your hand" aria-pressed="false">✋</button>
+<button class="control-btn hidden" id="clearHandsBtn" type="button" aria-label="Clear raised hands" title="Clear raised hands">✋<span id="raisedHandCount" class="clear-hands-count">0</span></button>
+<button class="control-btn hidden" id="muteAllBtn" type="button" aria-label="Mute all students" title="Mute all students">🔇</button>
+<button class="control-btn danger" id="leaveBtn" type="button" aria-label="Leave classroom" title="Leave classroom">☎</button>
+</div>
+<div class="mic-note" id="micNote" role="status">Student microphones are disabled until the assigned tutor joins.</div>
+</div>
+<aside class="side-panel">
+<section class="panel"><h2>Class chat</h2><div id="chatLog" class="chat-log" aria-live="polite"><div class="muted">Messages sent in this classroom appear here.</div></div><form id="chatForm" class="chat-form"><input id="chatInput" maxlength="500" required placeholder="Ask a question…" aria-label="Message"><button type="submit">Send</button></form></section>
+<section class="panel"><h2>Participants</h2><div id="participants" class="participant-list">Connecting…</div></section>
+<section class="panel"><h2>Class materials</h2><p class="hint">Your tutor controls which material is presented to the class.</p><div id="classMaterials">Materials load when you join.</div></section>
+<section class="panel"><h2>Connection information</h2><p class="hint" id="networkHint">Media connects directly between browsers. Network restrictions may prevent some connections because no TURN relay is configured yet.</p></section>
+</aside>
+</section>
 </main>
-</body>
-</html>
+<footer class="site-footer"><div class="container footer-bottom"><span>© <span id="year"></span> Sprachenschule</span><span>Language · Culture · Opportunity</span></div></footer>
+<div class="social-floats" aria-label="Social media links"><a class="social-float whatsapp-float" href="https://wa.me/254118515919" aria-label="Contact Sprachenschule on WhatsApp" title="WhatsApp us">✆</a><a class="social-float facebook-float" href="https://www.facebook.com/Sprachenschule/" aria-label="Sprachenschule on Facebook" title="Facebook">f</a></div>
+<script src="classroom-p2p.js"></script>
+</body></html>
