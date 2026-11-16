@@ -208,6 +208,20 @@ async function stopShare(){
 }
 function emptyStage(){const d=document.createElement('div');d.className='stage-empty';d.innerHTML='<div class="stage-empty-icon">◫</div><strong>Your lesson stage</strong><span>Your tutor’s screen or lesson material will appear here.</span>';return d;}
 function showStage(node,title){const stage=$('presentationStage');stage.replaceChildren(node);const label=document.createElement('div');label.className='material-title';label.textContent=title;stage.append(label);}
+async function updateConnectionPath(pc){
+ if(!pc||!['connected','completed'].includes(pc.iceConnectionState))return;
+ try{
+  const stats=await pc.getStats();let pair=null;
+  stats.forEach(report=>{
+   if(report.type==='transport'&&report.selectedCandidatePairId)pair=stats.get(report.selectedCandidatePairId)||pair;
+   if(report.type==='candidate-pair'&&(report.selected||(report.nominated&&report.state==='succeeded')))pair=report;
+  });
+  if(!pair)return;
+  const local=stats.get(pair.localCandidateId),remote=stats.get(pair.remoteCandidateId);
+  const viaRelay=local?.candidateType==='relay'||remote?.candidateType==='relay';
+  $('connectionState').textContent=viaRelay?'● Connected · TURN relay':'● Connected · Direct';
+ }catch(error){console.debug('Could not inspect selected ICE route.',error);}
+}
 function createPeer(id){
  if(state.peers.has(id))return state.peers.get(id);
  const pc=new RTCPeerConnection(rtcConfig),peer={pc,polite:state.user.id.localeCompare(id)>0,makingOffer:false,ignoreOffer:false,isSettingRemoteAnswerPending:false,pendingCandidates:[]};
@@ -229,7 +243,8 @@ function createPeer(id){
    else {const tile=makeTile(id,participant.full_name);const previous=tile.querySelector('video');if(previous)previous.remove();tile.prepend(video);}
   }
  };
- pc.onconnectionstatechange=()=>{const s=pc.connectionState;if(s==='failed'||s==='disconnected'){$('connectionState').textContent='● Reconnecting';}else if(s==='connected'){$('connectionState').textContent='● Connected';}};
+ pc.onconnectionstatechange=()=>{const s=pc.connectionState;if(s==='failed'||s==='disconnected'){$('connectionState').textContent='● Reconnecting';}else if(s==='connected'){updateConnectionPath(pc);}};
+ pc.oniceconnectionstatechange=()=>{if(['connected','completed'].includes(pc.iceConnectionState))updateConnectionPath(pc);};
  pc.onnegotiationneeded=async()=>{await renegotiate(id);};
  return peer;
 }
