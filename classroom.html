@@ -46,6 +46,7 @@
 <button class="control-btn" id="raiseHandBtn" type="button" aria-label="Raise hand" title="Raise your hand" aria-pressed="false">✋</button>
 <button class="control-btn hidden" id="clearHandsBtn" type="button" aria-label="Clear raised hands" title="Clear raised hands">✋<span id="raisedHandCount" class="clear-hands-count">0</span></button>
 <button class="control-btn hidden" id="muteAllBtn" type="button" aria-label="Mute all students" title="Mute all students">🔇</button>
+<button class="control-btn hidden" id="recordBtn" type="button" aria-label="Start class recording" title="Start class recording">⏺</button>
 <button class="control-btn danger" id="leaveBtn" type="button" aria-label="Leave classroom" title="Leave classroom">☎</button>
 </div>
 <div class="mic-note" id="micNote" role="status">Student microphones are disabled until the assigned tutor joins.</div>
@@ -54,6 +55,7 @@
 <section class="panel"><h2>Class chat</h2><div id="chatLog" class="chat-log" aria-live="polite"><div class="muted">Messages sent in this classroom appear here.</div></div><form id="chatForm" class="chat-form"><input id="chatInput" maxlength="500" required placeholder="Ask a question…" aria-label="Message"><button type="submit">Send</button></form></section>
 <section class="panel"><h2>Participants</h2><div id="participants" class="participant-list">Connecting…</div></section>
 <section class="panel"><h2>Class materials</h2><p class="hint">Your tutor controls which material is presented to the class.</p><div id="classMaterials">Materials load when you join.</div></section>
+<section class="panel"><h2>Class recordings</h2><p class="hint">Recordings are created on the tutor’s device and saved to the school’s private storage.</p><div id="classRecordings">Recordings load when you join.</div></section>
 <section class="panel"><h2>Connection information</h2><p class="hint" id="networkHint">Media connects directly between browsers. Network restrictions may prevent some connections because no TURN relay is configured yet.</p></section>
 </aside>
 </section>
