@@ -176,7 +176,10 @@ async function setMic(enabled){
    }
    state.localAudio=track;state.micOn=!!track;
    if(track){
-    for(const [id,peer] of state.peers){peer.pc.addTrack(track,new MediaStream([track]));}
+    await Promise.all([...state.peers.values()].map(async peer=>{
+     if(peer.audioSender)await peer.audioSender.replaceTrack(track);
+     else console.warn('Peer has no negotiated audio sender; audio will attach after its connection is rebuilt.');
+    }));
     addRecordingLocalAudio(track);
    }
   }catch(e){roomStatus('Microphone permission was not granted or no microphone is available.');return;}
@@ -184,7 +187,7 @@ async function setMic(enabled){
   // Stop and detach the outgoing audio track immediately when muted or when the host leaves.
   const track=state.localAudio;state.localAudio=null;state.micOn=false;
   if(track){track.enabled=false;track.stop();}
-  for(const [id,peer] of state.peers){peer.pc.getSenders().filter(s=>s.track?.kind==='audio').forEach(s=>peer.pc.removeTrack(s));}
+  await Promise.all([...state.peers.values()].map(peer=>peer.audioSender?peer.audioSender.replaceTrack(null):Promise.resolve()));
  }
  updateControlButtons();
 }
@@ -238,7 +241,12 @@ function createPeer(id){
  const pc=new RTCPeerConnection(rtcConfig),peer={pc,polite:state.user.id.localeCompare(id)>0,makingOffer:false,ignoreOffer:false,isSettingRemoteAnswerPending:false,pendingCandidates:[]};
  state.peers.set(id,peer);
  if(state.localVideo)pc.addTrack(state.localVideo,new MediaStream([state.localVideo]));
- if(state.localAudio)pc.addTrack(state.localAudio,new MediaStream([state.localAudio]));
+ // Keep a negotiated audio sender on every peer from the start. Replacing its
+ // track when a participant unmutes avoids repeated addTrack/removeTrack
+ // renegotiations, which can leave some mesh peers without the tutor's audio.
+ const audioTransceiver=pc.addTransceiver('audio',{direction:'sendrecv'});
+ peer.audioSender=audioTransceiver.sender;
+ if(state.localAudio)void peer.audioSender.replaceTrack(state.localAudio).catch(e=>console.warn('Could not attach local audio to peer.',e));
  if(state.screenTrack)pc.addTrack(state.screenTrack,new MediaStream([state.screenTrack]));
  pc.onicecandidate=e=>{if(e.candidate)sendSignal('ice',{candidate:e.candidate.toJSON()},id);};
  pc.ontrack=e=>{
