@@ -53,21 +53,25 @@ async function joinClass(event){
  $('joinBtn').disabled=true;status('Checking your scheduled class and connecting…');
  try{
   await getSession();
-  let c=null,lookupError=null;
+  let c=null;
   if(classId){
-   const result=await supabase.from('scheduled_classes').select('id,title,room_name,starts_at,duration_minutes,teacher_id,status').eq('id',classId).maybeSingle();
-   c=result.data;lookupError=result.error;
+   const result=await supabase.rpc('classroom_get_scheduled_class',{p_class_id:classId,p_title:null,p_room_name:null});
+   if(result.error)throw new Error(result.error.message);
+   if(result.data?.length>1)throw new Error('The scheduled class lookup returned more than one result.');
+   c=result.data?.[0]||null;
   }else{
-   const byTitle=await supabase.from('scheduled_classes').select('id,title,room_name,starts_at,duration_minutes,teacher_id,status').eq('title',classroomName).eq('status','scheduled').limit(2);
-   if(byTitle.error)lookupError=byTitle.error;
-   else if(byTitle.data?.length===1)c=byTitle.data[0];
-   else if(byTitle.data?.length>1)throw new Error('More than one scheduled class has that classroom name. Please open the lesson from your dashboard.');
+   const byTitle=await supabase.rpc('classroom_get_scheduled_class',{p_class_id:null,p_title:classroomName,p_room_name:null});
+   if(byTitle.error)throw new Error(byTitle.error.message);
+   if(byTitle.data?.length===1)c=byTitle.data[0];
+   else if(byTitle.data?.length>1)throw new Error('More than one scheduled lesson has that classroom name. Please open the specific lesson from your dashboard.');
    else{
-    const legacy=await supabase.from('scheduled_classes').select('id,title,room_name,starts_at,duration_minutes,teacher_id,status').eq('room_name',classroomName).maybeSingle();
-    c=legacy.data;lookupError=legacy.error;
+    const legacy=await supabase.rpc('classroom_get_scheduled_class',{p_class_id:null,p_title:null,p_room_name:classroomName});
+    if(legacy.error)throw new Error(legacy.error.message);
+    if(legacy.data?.length===1)c=legacy.data[0];
+    else if(legacy.data?.length>1)throw new Error('More than one scheduled lesson uses that room name. Please open the specific lesson from your dashboard.');
    }
   }
-  if(lookupError||!c)throw new Error('This scheduled classroom could not be found or is not available to your account. Open the lesson from your dashboard or check the classroom name.');
+  if(!c)throw new Error('This scheduled classroom could not be found or is not available to your account. Check that you are enrolled, assigned to the lesson, and within its scheduled join window.');
   const {data:lease,error:joinError}=await supabase.rpc('classroom_join',{p_class_id:c.id,p_client_id:state.clientId});
   if(joinError)throw new Error(joinError.message);
   state.classInfo=c;state.role=lease.role;state.tutorPresent=!!lease.tutor_present;state.joinedAt=new Date().toISOString();
