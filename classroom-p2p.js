@@ -6,7 +6,7 @@ const state = {
  user:null, profile:null, classInfo:null, role:null, clientId:crypto.randomUUID(),
  channel:null, peers:new Map(), participants:new Map(), streams:new Map(),
  localVideo:null, localAudio:null, screenTrack:null, screenSharers:new Set(), micOn:false, camOn:false,
- tutorPresent:false, studentsMuted:false, hands:new Set(), heartbeatTimer:null,
+ tutorPresent:false, studentsMuted:false, tutorMutedAll:false, hands:new Set(), heartbeatTimer:null,
  rosterTimer:null, signalsSub:null, joinedAt:null, activeMaterialId:null,
  pdf:null, pdfScale:.25, pdfPage:1, pdfRenderToken:0, mediaElement:null,
  attendanceId:null, leaving:false
@@ -104,7 +104,7 @@ function removeTile(id){document.getElementById('tile-'+id)?.remove();}
 function updateControlButtons(){
  $('micBtn').classList.toggle('is-active',state.micOn);$('micBtn').classList.toggle('is-inactive',!state.micOn);
  $('micBtn').setAttribute('aria-pressed',String(state.micOn));$('micBtn').setAttribute('aria-label',state.micOn?'Mute microphone':'Unmute microphone');
- $('micBtn').disabled=isStudent()&&!state.tutorPresent;
+ $('micBtn').disabled=isStudent()&&(!state.tutorPresent||state.studentsMuted);
  $('camBtn').classList.toggle('is-active',state.camOn);$('camBtn').classList.toggle('is-inactive',!state.camOn);
  $('camBtn').setAttribute('aria-pressed',String(state.camOn));$('camBtn').setAttribute('aria-label',state.camOn?'Turn camera off':'Turn camera on');
  $('participantCount').textContent=state.participants.size+' / 7';
@@ -210,7 +210,7 @@ function handleClassEvent(type,p,sender){
  if(type==='clap')showClap(sender);
  if(type==='hand'){if(p.raised)state.hands.add(sender);else state.hands.delete(sender);renderHands();}
  if(type==='hand-clear'&&isTutor()){state.hands.clear();renderHands();}
- if(type==='mute-all'&&isStudent()){state.studentsMuted=true;setMic(false);roomStatus('The tutor has muted student microphones.');}
+ if(type==='mute-all'&&isStudent()){state.studentsMuted=!!p.muted;if(state.studentsMuted){setMic(false);roomStatus('The tutor has muted student microphones.');}else{roomStatus('The tutor has reopened student microphones.');}updateControlButtons();}
  if(type==='screen-state'&&!isTutor()){if(p.active)state.screenSharers.add(sender);else{state.screenSharers.delete(sender);$('presentationStage').replaceChildren(emptyStage());}}
  if(type==='material-open'&&p.id)openMaterial(p.id,false);
  if(type==='pdf-view'&&p.id===state.activeMaterialId)goPdfPage(p.page,false,p.scale);
@@ -232,12 +232,13 @@ async function refreshParticipants(){
  $('attendanceCount').textContent=next.size+' present';$('participantCount').textContent=next.size+' / 7';
  const tutor=next.has(state.classInfo.teacher_id);
  updateTutorPresence(tutor);
- for(const [id,p] of next){if(id!==state.user.id&&state.user.id.localeCompare(id)>0){const peer=state.peers.get(id);if(peer&&peer.pc.signalingState==='stable'&&peer.pc.connectionState!=='connected'&&!peer.makingOffer)await renegotiate(id);}}
+ 
 }
 function updateTutorPresence(present){
  const changed=state.tutorPresent!==present;state.tutorPresent=present;
  if(isStudent()){
   if(!present){state.studentsMuted=true;setMic(false);roomStatus('Assigned tutor is absent. Student microphones are disabled.');}
+  else if(!changed || !state.studentsMuted){roomStatus('Tutor is present. Your microphone is off until you choose to unmute.');}
   else{state.studentsMuted=false;roomStatus('Tutor is present. Your microphone is off until you choose to unmute.');}
   updateControlButtons();
  }
@@ -334,7 +335,7 @@ $('chatForm').addEventListener('submit',async e=>{e.preventDefault();const messa
 $('clapBtn').addEventListener('click',()=>{showClap(state.user.id);sendSignal('clap',{});});
 $('raiseHandBtn').addEventListener('click',()=>{const raised=!state.hands.has(state.user.id);if(raised)state.hands.add(state.user.id);else state.hands.delete(state.user.id);renderHands();$('raiseHandBtn').setAttribute('aria-pressed',String(raised));sendSignal('hand',{raised});});
 $('clearHandsBtn').addEventListener('click',()=>{state.hands.clear();renderHands();sendSignal('hand-clear',{});});
-$('muteAllBtn').addEventListener('click',()=>sendSignal('mute-all',{}));
+$('muteAllBtn').addEventListener('click',()=>{state.tutorMutedAll=!state.tutorMutedAll;$('muteAllBtn').textContent=state.tutorMutedAll?'🔊':'🔇';$('muteAllBtn').setAttribute('aria-label',state.tutorMutedAll?'Allow student microphones':'Mute all students');sendSignal('mute-all',{muted:state.tutorMutedAll});});
 window.addEventListener('beforeunload',()=>{if(state.classInfo){navigator.sendBeacon?.(window.SUPABASE_URL+'/rest/v1/rpc/classroom_leave',new Blob([JSON.stringify({p_class_id:state.classInfo.id,p_client_id:state.clientId})],{type:'application/json'}));}});
 initialize();
 })();
