@@ -7,7 +7,7 @@ const state = {
  channel:null, peers:new Map(), participants:new Map(), streams:new Map(),
  localVideo:null, localAudio:null, screenTrack:null, screenSharers:new Set(), micOn:false, camOn:false,
  tutorPresent:false, studentsMuted:false, tutorMutedAll:false, hands:new Set(), heartbeatTimer:null,
- rosterTimer:null, signalsSub:null, joinedAt:null, activeMaterialId:null,
+ rosterTimer:null, signalsSub:null, joinedAt:null, activeMaterialId:null, presentationType:null,
  pdf:null, pdfScale:.25, pdfPage:1, pdfRenderToken:0, mediaElement:null,
  attendanceId:null, recording:null, leaving:false
 };
@@ -202,7 +202,7 @@ async function toggleShare(){
  if(state.screenTrack){state.screenTrack.stop();state.screenTrack=null;return;}
  try{
   const stream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:15,max:20}},audio:true});
-  state.screenTrack=stream.getVideoTracks()[0];
+  state.screenTrack=stream.getVideoTracks()[0];state.presentationType='screen';
   const stageVideo=document.createElement('video');stageVideo.autoplay=true;stageVideo.muted=true;stageVideo.playsInline=true;stageVideo.srcObject=new MediaStream([state.screenTrack]);showStage(stageVideo,'Tutor screen share');
   for(const [id,peer] of state.peers)peer.pc.addTrack(state.screenTrack,new MediaStream([state.screenTrack]));
   state.screenTrack.onended=()=>stopShare();
@@ -210,7 +210,7 @@ async function toggleShare(){
  }catch(e){roomStatus('Screen sharing was cancelled or is not supported by this browser.');}
 }
 async function stopShare(){
- if(!state.screenTrack)return;const track=state.screenTrack;state.screenTrack=null;track.stop();
+ if(!state.screenTrack)return;const track=state.screenTrack;state.screenTrack=null;state.presentationType=null;track.stop();
  for(const [id,peer] of state.peers)peer.pc.getSenders().filter(s=>s.track===track).forEach(s=>peer.pc.removeTrack(s));
  await sendSignal('screen-state',{active:false});
  $('presentationStage').replaceChildren(emptyStage());
@@ -306,9 +306,20 @@ async function refreshParticipants(){
  if(!state.classInfo)return;
  const {data,error}=await supabase.rpc('classroom_active_participants',{p_class_id:state.classInfo.id});
  if(error){console.warn('Participant list unavailable',error.message);return;}
+ const previous=state.participants;
  const next=new Map((data||[]).map(p=>[p.user_id,p]));
  state.participants=next;
- for(const [id,p] of next){if(id!==state.user.id){makeTile(id,p.full_name);if(!state.peers.has(id))createPeer(id);}}
+ for(const [id,p] of next){
+  if(id===state.user.id)continue;
+  makeTile(id,p.full_name);
+  if(!state.peers.has(id))createPeer(id);
+  // A student who joins after the tutor began presenting missed the original
+  // Realtime event. Replay the current presentation state directly to that student.
+  if(isTutor()&&p.role==='student'&&!previous.has(id)){
+   if(state.presentationType==='screen'&&state.screenTrack)void sendSignal('screen-state',{active:true},id);
+   else if(state.presentationType==='material'&&state.activeMaterialId)void sendSignal('material-open',{id:state.activeMaterialId},id);
+  }
+ }
  for(const id of [...state.peers.keys()])if(!next.has(id)){state.peers.get(id).pc.close();state.peers.delete(id);removeTile(id);document.getElementById('audio-'+id)?.remove();state.hands.delete(id);}
  $('participants').innerHTML=[...next.values()].map(p=>'<div class="participant-row"><span>'+safeText(p.full_name)+(p.user_id===state.user.id?' (you)':'')+'</span><span class="participant-role">'+(p.user_id===state.classInfo.teacher_id?'Assigned tutor':p.role==='student'?'Student':safeText(p.role))+'</span></div>').join('')||'No participants';
  $('attendanceList').innerHTML=[...next.values()].map(p=>'<span class="attendance-person"><i class="attendance-dot"></i>'+safeText(p.full_name)+'</span>').join('');
@@ -374,7 +385,7 @@ async function openMaterial(id,broadcast){
  if(broadcast)await sendSignal('material-open',{id:m.id});
  const {data:link,error:linkError}=await supabase.storage.from('class-materials').createSignedUrl(m.storage_path,300);
  if(linkError||!link?.signedUrl){roomStatus('The material could not be opened.');return;}
- state.activeMaterialId=m.id;state.pdf=null;state.pdfRenderToken++;
+ state.activeMaterialId=m.id;state.presentationType='material';state.pdf=null;state.pdfRenderToken++;
  const stage=$('presentationStage');stage.replaceChildren();
  if(m.material_type==='audio'||m.material_type==='video'){
   const media=document.createElement(m.material_type);media.src=link.signedUrl;media.controls=isTutor();media.autoplay=false;media.playsInline=true;
