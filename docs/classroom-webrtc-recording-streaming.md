@@ -28,9 +28,9 @@ Enforce the seven-person limit atomically in a database-backed join/lease operat
 
 ## Class recording
 
-The tutor's browser can compose the classroom into a canvas (screen/material stage plus participant tiles), mix remote and local audio through Web Audio, capture the composed stream with `MediaRecorder`, and upload short segments to the existing private `class-materials` bucket. Persist recording metadata and segment order in a class-recording table; resume/retry uploads after network interruptions; allow registrar-only listing/deletion and authorized class access. Use a finalization step to assemble or expose the segments as a playable recording. Recording must show a clear recording indicator and handle browser permission/storage failures.
+The P2P test branch now includes a first browser-based recording implementation: the assigned tutor can record a 720p canvas composition of the presentation stage and participant strip, mix available remote audio and the tutor microphone through Web Audio, and save one WebM file to the existing private `class-materials` bucket. Recording metadata is stored in `class_recordings`; only the assigned tutor can start a recording, and authorized enrolled students can access completed recordings. The UI shows a recording indicator and stops at a 45 MB safety threshold to stay below the bucket's 50 MB file limit.
 
-Browser recording is dependent on the tutor's device and browser staying active. It is not a cloud recording guarantee.
+This is an initial single-file implementation, not segmented/resumable recording. It uses browser memory and depends on the tutor's device, tab and network remaining active until upload completes. It is not a cloud recording guarantee. If the tab closes, the device sleeps, or the network fails during upload, the recording may be lost. Test short sessions first.
 
 ## YouTube Live
 
@@ -43,7 +43,7 @@ The no-paid-provider design is:
 4. Registrar arms a private broadcast; only the assigned tutor can start/stop it; the API records lifecycle, errors and watch URL.
 5. Stream health and reconnect status are visible in the tutor/registrar UI.
 
-A self-hosted bridge needs an always-on host (for example, a school-owned computer). A tablet or phone browser cannot act as a dependable always-on RTMP server. A small VPS is an alternative but introduces hosting cost. Do not claim YouTube Live is operational until the bridge is provisioned and end-to-end tested.
+A self-hosted bridge needs an always-on host (for example, a school-owned computer). A tablet or phone browser cannot act as a dependable always-on RTMP server. A small VPS is an alternative but introduces hosting cost. YouTube Live is deliberately not enabled in the current P2P test branch: no RTMP bridge has been provisioned, and the browser-only classroom does not itself publish an RTMPS stream. Do not claim YouTube Live is operational until the bridge is provisioned and end-to-end tested.
 
 ## Network limitations
 
