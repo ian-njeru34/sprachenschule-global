@@ -38,7 +38,7 @@ async function initialize(){
   state.profile=profile;
   $('displayName').value=profile.full_name||user.email?.split('@')[0]||'Participant';
   if(!['student','tutor','teacher','registrar','admin'].includes(profile.role))throw new Error('Your account is not authorised to enter the classroom.');
-  if(profile.role==='student'&&(!profile.access_approved||profile.access_suspended||(profile.access_expires_at&&new Date(profile.access_expires_at)<=new Date())))throw new Error('Your student access is not currently active. Please contact the school.');
+  if(profile.role==='student'&&(!profile.access_approved||profile.access_suspended||(!profile.access_expires_at||new Date(profile.access_expires_at)<=new Date())))throw new Error('Your student access is not currently active. Please contact the school.');
   $('dashboardLink').href=profile.role==='tutor'||profile.role==='teacher'?'teacher.html':'dashboard.html';
   $('backDashboardBtn').href=$('dashboardLink').href;
   status('Signed in. Enter the classroom name from your scheduled lesson.','ok');
@@ -209,7 +209,7 @@ function handleClassEvent(type,p,sender){
  if(type==='hand'){if(p.raised)state.hands.add(sender);else state.hands.delete(sender);renderHands();}
  if(type==='hand-clear'&&isTutor()){state.hands.clear();renderHands();}
  if(type==='mute-all'&&isStudent()){state.studentsMuted=!!p.muted;if(state.studentsMuted){setMic(false);roomStatus('The tutor has muted student microphones.');}else{roomStatus('The tutor has reopened student microphones.');}for(const [id,participant] of state.participants){if(participant.role==='student'){const audio=document.getElementById('audio-'+id);if(audio){if(state.studentsMuted)audio.pause();else audio.play().catch(()=>{});}}}updateControlButtons();}
- if(type==='screen-state'&&!isTutor()){if(p.active)state.screenSharers.add(sender);else{state.screenSharers.delete(sender);$('presentationStage').replaceChildren(emptyStage());}}
+ if(type==='screen-state'&&!isTutor()){if(p.active){state.screenSharers.add(sender);const existing=document.getElementById('tile-'+sender)?.querySelector('video');if(existing){existing.remove();showStage(existing,'Tutor screen share');}}else{state.screenSharers.delete(sender);$('presentationStage').replaceChildren(emptyStage());}}
  if(type==='material-open'&&p.id)openMaterial(p.id,false);
  if(type==='pdf-view'&&p.id===state.activeMaterialId)goPdfPage(p.page,false,p.scale);
  if(type==='material-control'&&p.id===state.activeMaterialId)applyMaterialControl(p);
